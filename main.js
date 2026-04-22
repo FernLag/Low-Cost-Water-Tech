@@ -32,21 +32,6 @@ const SENSOR_TYPES = {
     ],
     params: [],
   },
-  temp: {
-    label: "Temperature",
-    outputs: ["Celsius", "Fahrenheit", "Raw value"],
-    params: [],
-  },
-  ph: {
-    label: "pH sensor",
-    outputs: ["pH value", "Raw voltage", "Raw value"],
-    params: [],
-  },
-  ec: {
-    label: "EC / conductivity",
-    outputs: ["µS/cm", "mS/cm", "Raw value"],
-    params: [],
-  },
 };
 
 const PORTS = [
@@ -63,12 +48,44 @@ const PORTS = [
   "D6",
   "D7",
 ];
+
+const SURVEY_QUESTIONS = [
+  {
+    key: "name",
+    label: "Your name",
+    type: "text",
+    required: true,
+    placeholder: "e.g. Maria R.",
+  },
+  {
+    key: "country",
+    label: "Country",
+    type: "text",
+    required: true,
+    placeholder: "e.g. Canada",
+  },
+  {
+    key: "email",
+    label: "Email address",
+    type: "email",
+    required: false,
+    placeholder: "e.g. name@example.com",
+  },
+  {
+    key: "notes",
+    label: "Additional notes",
+    type: "text",
+    required: false,
+    placeholder: "Optional…",
+  },
+];
+
 let uid = 0;
 const nextUid = () => ++uid;
 
 function addBlock() {
   const bid = nextUid();
-  const defKey = "moisture";
+  const defKey = "df_moisture";
   const defCfg = SENSOR_TYPES[defKey];
   const usedPorts = [...document.querySelectorAll("[id^='port-sel-']")].map(
     (s) => s.value,
@@ -86,78 +103,68 @@ function addBlock() {
   block.dataset.bid = bid;
 
   block.innerHTML = `
-          <div class="block-head">
-            <span class="block-title">
-              <span class="sensor-num" id="bnum-${bid}"></span>
-              Sensor block
-            </span>
-            <button class="remove-btn" onclick="removeBlock(${bid})">Remove block</button>
+    <div class="block-head">
+      <span class="block-title">
+        <span class="sensor-num" id="bnum-${bid}"></span>
+        Sensor block
+      </span>
+      <button class="remove-btn" onclick="removeBlock(${bid})">Remove block</button>
+    </div>
+    <div class="block-body">
+
+      <div class="row2">
+        <div class="field">
+          <label>Port <span class="req">*</span></label>
+          <select id="port-sel-${bid}" required onchange="checkDuplicatePorts()">
+            ${PORTS.map((p) => `<option value="${p}" ${p === freePort ? "selected" : ""}>${p}</option>`).join("")}
+          </select>
+          <span class="err-msg" id="err-port-${bid}">Required.</span>
+        </div>
+        <div class="field">
+          <label>Sensor type <span class="req">*</span></label>
+          <select id="stype-sel-${bid}" required onchange="onSensorChange(${bid})">
+            ${sensorOpts}
+          </select>
+          <div class="add-option-row" style="margin-top:6px">
+            <input type="text" id="stype-new-${bid}" placeholder="Add custom sensor type…">
+            <button class="add-option-btn"
+              onclick="addOptionToDropdown('stype-sel-${bid}','stype-new-${bid}')">+ Add</button>
           </div>
-          <div class="block-body">
-            <div class="row2">
-              <div class="field">
-                <label>Port <span class="req">*</span></label>
-                <select id="port-sel-${bid}" required onchange="checkDuplicatePorts()">
-                  ${PORTS.map((p) => `<option value="${p}" ${p === freePort ? "selected" : ""}>${p}</option>`).join("")}
-                </select>
-                <span class="err-msg" id="err-port-${bid}">Required.</span>
-              </div>
-              <div class="field">
-                <label>Sensor type <span class="req">*</span></label>
-                <select id="stype-sel-${bid}" required onchange="onSensorChange(${bid})">
-                  ${sensorOpts}
-                </select>
-              </div>
-            </div>
+        </div>
+      </div>
 
-            <div class="section-card">
-              <div class="section-head">
-                <span class="section-label">Output variables <span class="req">*</span></span>
-              </div>
-              <div class="section-body">
-                <div class="field">
-                  <label>Select output</label>
-                  <select id="output-sel-${bid}" required>
-                    ${outputOpts}
-                  </select>
-                  <span class="err-msg" id="err-output-${bid}">Required.</span>
-                </div>
-                <div class="add-option-row">
-                  <input type="text" id="output-new-${bid}" placeholder="Add custom output option…">
-                  <button class="add-option-btn" onclick="addOptionToDropdown('output-sel-${bid}','output-new-${bid}')">+ Add</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="section-card">
-              <div class="section-head">
-                <span class="section-label">Sensor type options</span>
-              </div>
-              <div class="section-body">
-                <div class="field">
-                  <label>Current sensor type dropdown</label>
-                  <select id="stype-display-${bid}" onchange="syncSensorType(${bid})">
-                    ${sensorOpts}
-                  </select>
-                </div>
-                <div class="add-option-row">
-                  <input type="text" id="stype-new-${bid}" placeholder="Add custom sensor type…">
-                  <button class="add-option-btn" onclick="addOptionToDropdown('stype-sel-${bid}','stype-new-${bid}');addOptionToDropdown('stype-display-${bid}','stype-new-${bid}')">+ Add</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="section-card">
-              <div class="section-head">
-                <span class="section-label">Parameters <span class="req">*</span></span>
-              </div>
-              <div class="section-body">
-                <div id="params-${bid}"></div>
-                <button class="add-param-btn" onclick="addParamRow(${bid})">+ Add parameter row</button>
-              </div>
-            </div>
+      <div class="section-card">
+        <div class="section-head">
+          <span class="section-label">Output variables <span class="req">*</span></span>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label>Select output</label>
+            <select id="output-sel-${bid}" required>
+              ${outputOpts}
+            </select>
+            <span class="err-msg" id="err-output-${bid}">Required.</span>
           </div>
-        `;
+          <div class="add-option-row">
+            <input type="text" id="output-new-${bid}" placeholder="Add custom output option…">
+            <button class="add-option-btn"
+              onclick="addOptionToDropdown('output-sel-${bid}','output-new-${bid}')">+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">
+          <span class="section-label">Parameters <span class="req">*</span></span>
+        </div>
+        <div class="section-body">
+          <div id="params-${bid}"></div>
+          <button class="add-param-btn" onclick="addParamRow(${bid})">+ Add parameter row</button>
+        </div>
+      </div>
+
+    </div>
+  `;
 
   document.getElementById("sensors-list").appendChild(block);
   defCfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.unit));
@@ -192,23 +199,12 @@ function onSensorChange(bid) {
   const key = document.getElementById(`stype-sel-${bid}`).value;
   const cfg = SENSOR_TYPES[key];
   if (!cfg) return;
-  const disp = document.getElementById(`stype-display-${bid}`);
-  if (disp) disp.value = key;
   document.getElementById(`output-sel-${bid}`).innerHTML = cfg.outputs
     .map((o) => `<option value="${o}">${o}</option>`)
     .join("");
   const container = document.getElementById(`params-${bid}`);
   container.innerHTML = "";
   cfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.unit));
-}
-
-function syncSensorType(bid) {
-  const val = document.getElementById(`stype-display-${bid}`).value;
-  const main = document.getElementById(`stype-sel-${bid}`);
-  if (main) {
-    main.value = val;
-    onSensorChange(bid);
-  }
 }
 
 function addOptionToDropdown(selectId, inputId) {
@@ -224,6 +220,15 @@ function addOptionToDropdown(selectId, inputId) {
   }
   sel.value = val;
   inp.value = "";
+
+  if (selectId.startsWith("stype-sel-")) {
+    const bid = selectId.replace("stype-sel-", "");
+    const outSel = document.getElementById(`output-sel-${bid}`);
+    if (outSel)
+      outSel.innerHTML = `<option value="">— select output —</option>`;
+    const paramContainer = document.getElementById(`params-${bid}`);
+    if (paramContainer) paramContainer.innerHTML = "";
+  }
 }
 
 function addParamRow(bid, nameVal = "", valueVal = "", unitVal = "") {
@@ -233,20 +238,20 @@ function addParamRow(bid, nameVal = "", valueVal = "", unitVal = "") {
   row.className = "param-row";
   row.dataset.rid = rid;
   row.innerHTML = `
-          <div class="field">
-            <label>Name <span class="req">*</span></label>
-            <input type="text" id="pname-${rid}" value="${nameVal}" placeholder="e.g. air_val" required>
-          </div>
-          <div class="field">
-            <label>Value <span class="req">*</span></label>
-            <input type="number" id="pval-${rid}" value="${valueVal}" placeholder="e.g. 520" step="any" required>
-          </div>
-          <div class="field">
-            <label>Unit</label>
-            <input type="text" id="punit-${rid}" value="${unitVal}" placeholder="e.g. ADC">
-          </div>
-          <button class="rem-param-btn" title="Remove row" onclick="removeParamRow(${bid},'${rid}')">−</button>
-        `;
+    <div class="field">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="pname-${rid}" value="${nameVal}" placeholder="variable name" required>
+    </div>
+    <div class="field">
+      <label>Value <span class="req">*</span></label>
+      <input type="number" id="pval-${rid}" value="${valueVal}" placeholder="0" step="any" required>
+    </div>
+    <div class="field">
+      <label>Unit</label>
+      <input type="text" id="punit-${rid}" value="${unitVal}" placeholder="">
+    </div>
+    <button class="rem-param-btn" title="Remove row" onclick="removeParamRow(${bid},'${rid}')">−</button>
+  `;
   container.appendChild(row);
   updateParamRemoveBtns(bid);
 }
@@ -298,10 +303,14 @@ function validate() {
     el.classList.toggle("error", empty);
     if (empty) valid = false;
   });
+
   document.querySelectorAll(".sensor-block").forEach((block) => {
     const bid = block.dataset.bid;
+    const sensorKey = document.getElementById(`stype-sel-${bid}`)?.value;
+    const cfg = SENSOR_TYPES[sensorKey];
+    const hasConfigParams = cfg && cfg.params.length > 0;
     const pRows = document.querySelectorAll(`#params-${bid} .param-row`);
-    if (pRows.length === 0) {
+    if (hasConfigParams && pRows.length === 0) {
       alert(
         `Sensor block ${block.querySelector(".sensor-num").textContent} needs at least one parameter.`,
       );
@@ -311,7 +320,7 @@ function validate() {
   return valid;
 }
 
-function buildIno(blocks, viz) {
+function buildIno(blocks, viz, surveyAnswers = {}) {
   const now = new Date().toISOString().slice(0, 10);
   const numBlocks = blocks.length;
 
@@ -329,8 +338,6 @@ function buildIno(blocks, viz) {
   });
 
   function vizBlock(b, idx) {
-    const pin = `SENSOR_${idx}_PIN`;
-    const prefix = `SENSOR_${idx}`;
     switch (viz) {
       case "bar":
         return `  Serial.println(val_${idx});`;
@@ -387,15 +394,23 @@ function buildIno(blocks, viz) {
     )
     .join("\n");
 
+  const surveyLines = SURVEY_QUESTIONS.filter((q) => surveyAnswers[q.key])
+    .map((q) => ` *   ${q.label.padEnd(24)}: ${surveyAnswers[q.key]}`)
+    .join("\n");
+
+  const surveySection = surveyLines
+    ? ` * ────────────────────────────────────────────────\n${surveyLines}\n`
+    : "";
+
   return `/*
  * ════════════════════════════════════════════════
- *  Hello World
+ *  Sensor Code Generator
  *  Generated : ${now}
  *  Sensors   : ${numBlocks}
- *  Visual mode  : ${viz}
+ *  Viz mode  : ${viz}
  * ────────────────────────────────────────────────
 ${header}
- * ════════════════════════════════════════════════
+${surveySection} * ════════════════════════════════════════════════
  */
 
 // ── Serial baud rate ──────────────────────────
@@ -432,13 +447,17 @@ function downloadFile(content, filename) {
   URL.revokeObjectURL(url);
 }
 
+let _pendingBlocks = [];
+let _pendingViz = "";
+let _pendingFilename = "";
+
 function handleGenerate() {
   document
     .querySelectorAll(".error")
     .forEach((el) => el.classList.remove("error"));
   if (!validate()) return;
 
-  const blocks = [];
+  _pendingBlocks = [];
   document.querySelectorAll(".sensor-block").forEach((block) => {
     const bid = block.dataset.bid;
     const params = [];
@@ -450,7 +469,7 @@ function handleGenerate() {
         unit: document.getElementById(`punit-${rid}`)?.value || "",
       });
     });
-    blocks.push({
+    _pendingBlocks.push({
       port: document.getElementById(`port-sel-${bid}`).value,
       sensor: document.getElementById(`stype-sel-${bid}`).value,
       output: document.getElementById(`output-sel-${bid}`).value,
@@ -458,19 +477,75 @@ function handleGenerate() {
     });
   });
 
-  const viz = document.getElementById("viz").value;
-  const code = buildIno(blocks, viz);
-  const filename =
-    blocks.length === 1
-      ? `sensor_${blocks[0].port}.ino`
-      : `sensors_${blocks.map((b) => b.port).join("_")}.ino`;
+  _pendingViz = document.getElementById("viz").value;
+  _pendingFilename =
+    _pendingBlocks.length === 1
+      ? `sensor_${_pendingBlocks[0].port}.ino`
+      : `sensors_${_pendingBlocks.map((b) => b.port).join("_")}.ino`;
 
-  downloadFile(code, filename);
+  openSurvey();
+}
+
+function openSurvey() {
+  const overlay = document.getElementById("survey-overlay");
+  const body = document.getElementById("survey-body");
+
+  body.innerHTML = SURVEY_QUESTIONS.map((q) => {
+    const req = q.required ? `<span class="req">*</span>` : "";
+    if (q.type === "select") {
+      return `
+        <div class="field survey-field">
+          <label>${q.label} ${req}</label>
+          <select id="sq-${q.key}" ${q.required ? "required" : ""}>
+            <option value="">— select —</option>
+            ${q.options.map((o) => `<option value="${o}">${o}</option>`).join("")}
+          </select>
+          <span class="err-msg" id="sqerr-${q.key}">Required.</span>
+        </div>`;
+    }
+    return `
+      <div class="field survey-field">
+        <label>${q.label} ${req}</label>
+        <input type="${q.type}" id="sq-${q.key}"
+               placeholder="${q.placeholder || ""}"
+               ${q.required ? "required" : ""}>
+        <span class="err-msg" id="sqerr-${q.key}">Required.</span>
+      </div>`;
+  }).join("");
+
+  overlay.classList.add("show");
+}
+
+function closeSurvey() {
+  document.getElementById("survey-overlay").classList.remove("show");
+}
+
+function confirmSurvey() {
+  let valid = true;
+  SURVEY_QUESTIONS.forEach((q) => {
+    if (!q.required) return;
+    const el = document.getElementById(`sq-${q.key}`);
+    const err = document.getElementById(`sqerr-${q.key}`);
+    const empty = !el.value || el.value.trim() === "";
+    el.classList.toggle("error", empty);
+    if (err) err.classList.toggle("show", empty);
+    if (empty) valid = false;
+  });
+  if (!valid) return;
+
+  const answers = {};
+  SURVEY_QUESTIONS.forEach((q) => {
+    answers[q.key] = document.getElementById(`sq-${q.key}`).value.trim();
+  });
+
+  closeSurvey();
+
+  const code = buildIno(_pendingBlocks, _pendingViz, answers);
+  downloadFile(code, _pendingFilename);
 
   document.getElementById("preview-code").textContent = code;
   document.getElementById("preview-wrap").classList.add("show");
-
-  document.getElementById("success-filename").textContent = filename;
+  document.getElementById("success-filename").textContent = _pendingFilename;
   document.getElementById("success-banner").classList.add("show");
 }
 

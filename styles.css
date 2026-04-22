@@ -354,7 +354,6 @@ body {
   display: block;
 }
 
-/* ── generate button + success banner ── */
 .gen-btn {
   width: 100%;
   padding: 14px;
@@ -396,7 +395,6 @@ body {
   font-weight: 600;
 }
 
-/* ── code preview ── */
 .preview-wrap {
   margin-top: 14px;
   border: 1px solid #c8d8a0;
@@ -459,4 +457,117 @@ body {
   body {
     padding: 24px 12px 60px;
   }
+}
+
+.survey-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.survey-overlay.show {
+  display: flex;
+}
+
+.survey-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.survey-modal-head {
+  padding: 16px 20px;
+  background: #eef4dc;
+  border-bottom: 1px solid #c8d8a0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.survey-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3a4f0a;
+}
+
+.survey-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #6b7a4a;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.survey-close:hover {
+  background: #d8ecb0;
+  color: #3a4f0a;
+}
+
+.survey-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.survey-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.survey-modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid #e0dfd8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  background: #fafcf5;
+}
+
+.survey-cancel-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid #c8d8a0;
+  background: none;
+  color: #5a7010;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.survey-cancel-btn:hover {
+  background: #eef4dc;
+}
+
+.survey-confirm-btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #1258a8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 6px rgba(18, 88, 168, 0.25);
+}
+.survey-confirm-btn:hover {
+  background: #0e4a8f;
 }

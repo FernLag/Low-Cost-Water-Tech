@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
-    <script src="main.js"></script>
     <title>Sensor Code Generator</title>
   </head>
   <body>
@@ -15,9 +14,9 @@
           One port per block. Use the <strong>+</strong> buttons to add options
           to each dropdown or add more parameter rows.
         </p>
-        <span class="req-note"
-          >Fields marked <span class="req">*</span> are mandatory</span
-        >
+        <span class="req-note">
+          Fields marked <span class="req">*</span> are mandatory
+        </span>
       </div>
 
       <div id="sensors-list"></div>
@@ -28,18 +27,30 @@
       </button>
 
       <div class="viz-section">
-        <div class="slabel">
-          Visualization — optional · applied to all sensors
-        </div>
+        <div class="slabel">Visualization — optional</div>
         <div class="field">
           <label>Visualization type</label>
           <select id="viz">
+            <option value="none">No selection</option>
             <option value="bar">Loading bar</option>
             <option value="raw">Raw value</option>
             <option value="state">State — very dry / dry / wet</option>
-            <option value="color">Transformed Raw Value 0-100</option>
-            <option value="color">Rate of change *PERHAPS IN FUTURE*</option>
+            <option value="transformed">Transformed Raw Value 0–100</option>
+            <option value="rate">Rate of change (future)</option>
           </select>
+          <div class="add-option-row" style="margin-top: 6px">
+            <input
+              type="text"
+              id="viz-new"
+              placeholder="Add custom visualization…"
+            />
+            <button
+              class="add-option-btn"
+              onclick="addOptionToDropdown('viz', 'viz-new')"
+            >
+              + Add
+            </button>
+          </div>
         </div>
       </div>
 
@@ -49,10 +60,9 @@
 
       <div class="success-banner" id="success-banner">
         <span>&#10003;</span>
-        <span
-          ><strong id="success-filename"></strong> Downloaded
-          successfully.</span
-        >
+        <span>
+          <strong id="success-filename"></strong> Downloaded successfully.
+        </span>
       </div>
 
       <div class="preview-wrap" id="preview-wrap">
@@ -63,5 +73,27 @@
         <pre class="preview-code" id="preview-code"></pre>
       </div>
     </div>
+
+    <div id="survey-overlay" class="survey-overlay">
+      <div class="survey-modal">
+        <div class="survey-modal-head">
+          <span class="survey-title">Before you download</span>
+          <button class="survey-close" onclick="closeSurvey()" title="Cancel">
+            &#x2715;
+          </button>
+        </div>
+        <div class="survey-modal-body" id="survey-body"></div>
+        <div class="survey-modal-foot">
+          <button class="survey-cancel-btn" onclick="closeSurvey()">
+            Cancel
+          </button>
+          <button class="survey-confirm-btn" onclick="confirmSurvey()">
+            Confirm + download
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="main.js"></script>
   </body>
 </html>

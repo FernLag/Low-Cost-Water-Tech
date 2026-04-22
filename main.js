@@ -557,6 +557,3 @@ function copyPreview() {
     setTimeout(() => (btn.textContent = "Copy"), 1500);
   });
 }
-
-addBlock();
-addBlock();

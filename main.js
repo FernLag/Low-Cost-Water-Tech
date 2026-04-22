@@ -1,39 +1,51 @@
 const SENSOR_TYPES = {
-  moisture: {
-    label: "Soil moisture",
-    outputs: ["Moisture %", "Raw ADC value", "Dry / moist / wet"],
+  df_moisture: {
+    label: "Df_robot_water",
+    outputs: [
+      "Raw value",
+      "TAW",
+      "Transformed Raw Value",
+      "Rate of change",
+      "1-2-3 point calibration",
+      "Threshold (very dry/dry/wet)",
+    ],
     params: [
-      { name: "air_val", value: "520", unit: "ADC" },
-      { name: "water_val", value: "260", unit: "ADC" },
-      { name: "fc", value: "0.35", unit: "" },
-      { name: "wp", value: "0.12", unit: "" },
-      { name: "k", value: "1.0", unit: "" },
+      { name: "air_val", value: "0", unit: "" },
+      { name: "water_val", value: "0", unit: "" },
+      { name: "fc", value: "0.00", unit: "" },
+      { name: "wp", value: "0.00", unit: "" },
+      { name: "k", value: "0.0", unit: "" },
     ],
   },
-  temp: {
-    label: "Temperature (NTC)",
-    outputs: ["Celsius", "Fahrenheit", "Raw ADC value"],
-    params: [
-      { name: "r_ref", value: "10000", unit: "Ω" },
-      { name: "beta", value: "3950", unit: "" },
-      { name: "t_ref", value: "298.15", unit: "K" },
+  Watermark_moisture: {
+    label: "Watermark 200SS",
+    outputs: ["Transformed Raw value"],
+    params: [],
+  },
+  Watermark_3x_200SSVA3_Temp: {
+    label: "3x Watermark 200SS + 200SSVA3 + Temperature",
+    outputs: [
+      "Raw value",
+      "Transformed raw value",
+      "Tension (3 locations)",
+      "Temperature",
     ],
+    params: [],
+  },
+  temp: {
+    label: "Temperature",
+    outputs: ["Celsius", "Fahrenheit", "Raw value"],
+    params: [],
   },
   ph: {
     label: "pH sensor",
-    outputs: ["pH value", "Raw voltage", "Raw ADC value"],
-    params: [
-      { name: "offset", value: "0.0", unit: "V" },
-      { name: "slope", value: "-59.1", unit: "mV/pH" },
-    ],
+    outputs: ["pH value", "Raw voltage", "Raw value"],
+    params: [],
   },
   ec: {
     label: "EC / conductivity",
-    outputs: ["µS/cm", "mS/cm", "Raw ADC value"],
-    params: [
-      { name: "cell_k", value: "1.0", unit: "K" },
-      { name: "temp_c", value: "25", unit: "°C" },
-    ],
+    outputs: ["µS/cm", "mS/cm", "Raw value"],
+    params: [],
   },
 };
 
@@ -377,10 +389,10 @@ function buildIno(blocks, viz) {
 
   return `/*
  * ════════════════════════════════════════════════
- *  Arduino Sensor Code Generator — Hello World
+ *  Hello World
  *  Generated : ${now}
  *  Sensors   : ${numBlocks}
- *  Viz mode  : ${viz}
+ *  Visual mode  : ${viz}
  * ────────────────────────────────────────────────
 ${header}
  * ════════════════════════════════════════════════
@@ -395,7 +407,7 @@ ${constants.trimEnd()}
 // ─────────────────────────────────────────────
 void setup() {
   Serial.begin(BAUD_RATE);
-  Serial.println("Hello World — sensor sketch ready.");
+  Serial.println("Hello World.");
 }
 
 // ─────────────────────────────────────────────

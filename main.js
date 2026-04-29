@@ -1,52 +1,134 @@
 const SENSOR_TYPES = {
   df_moisture: {
     label: "Df_robot_water",
+    tip: "DFRobot capacitive soil moisture sensor. Outputs an analog voltage proportional to soil water content. Requires air and water calibration values.",
     outputs: [
-      "Raw value",
-      "TAW",
-      "Transformed Raw Value",
-      "Rate of change",
-      "1-2-3 point calibration",
-      "Threshold (very dry/dry/wet)",
+      {
+        value: "Raw value",
+        tip: "No transformation applied.",
+      },
+      {
+        value: "TAW",
+        tip: "Total Available Water: ",
+      },
+      {
+        value: "Transformed Raw Value",
+        tip: "Raw value mapped to 0–100.",
+      },
+      {
+        value: "Rate of change",
+        tip: "Difference between current and previous reading per loop iteration. Useful for detecting irrigation or rain events.",
+      },
+      {
+        value: "1-2-3 point calibration",
+        tip: "Applies a 1, 2, or 3-point linear correction to convert raw values.",
+      },
+      {
+        value: "Threshold (very dry/dry/wet)",
+        tip: "Classifies moisture into three states.",
+      },
     ],
     params: [
-      { name: "air_val", value: "0", unit: "" },
-      { name: "water_val", value: "0", unit: "" },
-      { name: "fc", value: "0.00", unit: "" },
-      { name: "wp", value: "0.00", unit: "" },
-      { name: "k", value: "0.0", unit: "" },
+      {
+        name: "air_val",
+        label: "Air value: ",
+        value: "",
+      },
+      {
+        name: "water_val",
+        label: "Water value: ",
+        value: "",
+      },
+      {
+        name: "fc",
+        label: "Field capacity: ",
+        value: "",
+      },
+      {
+        name: "wp",
+        label: "Wilting point: ",
+        value: "",
+      },
+      { name: "k", label: "k: ", value: "" },
     ],
   },
   Watermark_moisture: {
     label: "Watermark 200SS",
-    outputs: ["Transformed Raw value"],
+    tip: "",
+    outputs: [
+      {
+        value: "Transformed Raw value",
+        tip: "",
+      },
+    ],
     params: [],
   },
   Watermark_3x_200SSVA3_Temp: {
     label: "3x Watermark 200SS + 200SSVA3 + Temperature",
+    tip: "Combination setup: three Watermark 200SS sensors, one 200SSVA3, and one temperature probe for temperature correction.",
     outputs: [
-      "Raw value",
-      "Transformed raw value",
-      "Tension (3 locations)",
-      "Temperature",
+      {
+        value: "Raw value",
+        tip: "Unprocessed ADC readings from all three Watermark sensors.",
+      },
+      {
+        value: "Transformed raw value",
+        tip: "All three sensors converted to centibars using the Watermark lookup table.",
+      },
+      {
+        value: "Tension (3 locations)",
+        tip: "Soil water tension in centibars at each of the three sensor positions — top, middle, and bottom of the profile.",
+      },
+      {
+        value: "Temperature",
+        tip: "Temperature reading from the 200SSVA3 probe used to correct tension readings for temperature effects.",
+      },
     ],
     params: [],
   },
 };
 
-const PORTS = [
-  "A0",
-  "A1",
-  "A2",
-  "A3",
-  "A4",
-  "A5",
-  "D2",
-  "D3",
-  "D4",
-  "D5",
-  "D6",
-  "D7",
+const PORT_TIPS = {
+  A1: "Analog pin 1",
+  A2: "Analog pin 2",
+  A3: "Analog pin 3",
+  A4: "Analog pin 4",
+  A5: "Analog pin 5",
+};
+
+const PORTS = ["A1", "A2", "A3", "A4", "A5"];
+
+const VIZ_OPTIONS = [
+  {
+    value: "none",
+    label: "No visualization",
+    tip: "No Serial output for this sensor. Useful when you only want to log data without displaying it.",
+  },
+  {
+    value: "bar",
+    label: "Loading bar",
+    tip: "",
+  },
+  {
+    value: "raw",
+    label: "Raw value",
+    tip: "",
+  },
+  {
+    value: "state",
+    label: "State: very dry / dry / wet",
+    tip: "",
+  },
+  {
+    value: "transformed",
+    label: "Transformed Raw Value 0–100",
+    tip: "",
+  },
+  {
+    value: "rate",
+    label: "Rate of change (future)",
+    tip: "",
+  },
 ];
 
 const SURVEY_QUESTIONS = [
@@ -55,20 +137,20 @@ const SURVEY_QUESTIONS = [
     label: "Your name",
     type: "text",
     required: true,
-    placeholder: "e.g. Maria R.",
+    placeholder: "e.g. John R.",
   },
   {
     key: "country",
     label: "Country",
     type: "text",
     required: true,
-    placeholder: "e.g. Canada",
+    placeholder: "e.g. United States of America",
   },
   {
     key: "email",
     label: "Email address",
     type: "email",
-    required: false,
+    required: true,
     placeholder: "e.g. name@example.com",
   },
   {
@@ -80,23 +162,92 @@ const SURVEY_QUESTIONS = [
   },
 ];
 
+function initTooltips() {
+  const popup = document.createElement("div");
+  popup.id = "tooltip-popup";
+  popup.style.cssText = `
+    position: fixed;
+    z-index: 9999;
+    max-width: 260px;
+    padding: 8px 11px;
+    background: #1a2a08;
+    color: #e8f0d0;
+    font-size: 12px;
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: normal;
+  `;
+  document.body.appendChild(popup);
+
+  document.addEventListener("mouseover", (e) => {
+    const badge = e.target.closest(".tip-badge");
+    if (!badge) return;
+    const text = badge.dataset.tip;
+    if (!text) return;
+    popup.textContent = text;
+    popup.style.opacity = "1";
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    const badge = e.target.closest(".tip-badge");
+    if (!badge) {
+      popup.style.opacity = "0";
+      return;
+    }
+    const x = e.clientX + 14;
+    const y = e.clientY + 14;
+    const pw = popup.offsetWidth;
+    const ph = popup.offsetHeight;
+    popup.style.left =
+      (x + pw > window.innerWidth ? e.clientX - pw - 10 : x) + "px";
+    popup.style.top =
+      (y + ph > window.innerHeight ? e.clientY - ph - 10 : y) + "px";
+  });
+
+  document.addEventListener("mouseout", (e) => {
+    if (!e.target.closest(".tip-badge")) popup.style.opacity = "0";
+  });
+}
+
+function tipBadge(text, id = "") {
+  const safe = (text || "").replace(/"/g, "&quot;");
+  const idAttr = id ? `id="${id}"` : "";
+  return `<span class="tip-badge" ${idAttr} data-tip="${safe}">i</span>`;
+}
+
+function setTip(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.dataset.tip = text || "";
+}
+
 let uid = 0;
 const nextUid = () => ++uid;
 
 function addBlock() {
   const bid = nextUid();
-  const defKey = "df_moisture";
+  const defKey = Object.keys(SENSOR_TYPES)[0];
   const defCfg = SENSOR_TYPES[defKey];
   const usedPorts = [...document.querySelectorAll("[id^='port-sel-']")].map(
     (s) => s.value,
   );
   const freePort = PORTS.find((p) => !usedPorts.includes(p)) || PORTS[0];
+
   const sensorOpts = Object.entries(SENSOR_TYPES)
     .map(([k, v]) => `<option value="${k}">${v.label}</option>`)
     .join("");
+
   const outputOpts = defCfg.outputs
-    .map((o) => `<option value="${o}">${o}</option>`)
+    .map((o) => `<option value="${o.value}">${o.value}</option>`)
     .join("");
+
+  const vizOpts = VIZ_OPTIONS.map(
+    (v) => `<option value="${v.value}">${v.label}</option>`,
+  ).join("");
 
   const block = document.createElement("div");
   block.className = "sensor-block";
@@ -114,33 +265,38 @@ function addBlock() {
 
       <div class="row2">
         <div class="field">
-          <label>Port <span class="req">*</span></label>
-          <select id="port-sel-${bid}" required onchange="checkDuplicatePorts()">
+          <label>
+            Port <span class="req">*</span>
+            ${tipBadge(PORT_TIPS[freePort] || "", `port-tip-${bid}`)}
+          </label>
+          <select id="port-sel-${bid}" required
+            onchange="checkDuplicatePorts(); updatePortTip(${bid})">
             ${PORTS.map((p) => `<option value="${p}" ${p === freePort ? "selected" : ""}>${p}</option>`).join("")}
           </select>
           <span class="err-msg" id="err-port-${bid}">Required.</span>
         </div>
         <div class="field">
-          <label>Sensor type <span class="req">*</span></label>
+          <label>
+            Sensor type <span class="req">*</span>
+            ${tipBadge(defCfg.tip || "", `stype-tip-${bid}`)}
+          </label>
           <select id="stype-sel-${bid}" required onchange="onSensorChange(${bid})">
             ${sensorOpts}
           </select>
-          <div class="add-option-row" style="margin-top:6px">
-            <input type="text" id="stype-new-${bid}" placeholder="Add custom sensor type…">
-            <button class="add-option-btn"
-              onclick="addOptionToDropdown('stype-sel-${bid}','stype-new-${bid}')">+ Add</button>
-          </div>
         </div>
       </div>
 
       <div class="section-card">
         <div class="section-head">
-          <span class="section-label">Output variables <span class="req">*</span></span>
+          <span class="section-label">
+            Output variable <span class="req">*</span>
+            ${tipBadge(defCfg.outputs[0]?.tip || "", `output-tip-${bid}`)}
+          </span>
         </div>
         <div class="section-body">
           <div class="field">
-            <label>Select output</label>
-            <select id="output-sel-${bid}" required>
+            <select id="output-sel-${bid}" required
+              onchange="updateOutputTip(${bid})">
               ${outputOpts}
             </select>
             <span class="err-msg" id="err-output-${bid}">Required.</span>
@@ -155,11 +311,32 @@ function addBlock() {
 
       <div class="section-card">
         <div class="section-head">
-          <span class="section-label">Parameters <span class="req">*</span></span>
+          <span class="section-label">
+            Visualization
+            ${tipBadge(VIZ_OPTIONS[0]?.tip || "", `viz-tip-${bid}`)}
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <select id="viz-sel-${bid}" onchange="updateVizTip(${bid})">
+              ${vizOpts}
+            </select>
+          </div>
+          <div class="add-option-row">
+            <input type="text" id="viz-new-${bid}" placeholder="Add custom visualization…">
+            <button class="add-option-btn"
+              onclick="addOptionToDropdown('viz-sel-${bid}','viz-new-${bid}')">+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">
+          <span class="section-label">Parameters</span>
         </div>
         <div class="section-body">
           <div id="params-${bid}"></div>
-          <button class="add-param-btn" onclick="addParamRow(${bid})">+ Add parameter row</button>
+          <button class="add-param-btn" onclick="addParamRow(${bid})">+ Add parameter</button>
         </div>
       </div>
 
@@ -167,7 +344,7 @@ function addBlock() {
   `;
 
   document.getElementById("sensors-list").appendChild(block);
-  defCfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.unit));
+  defCfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.label));
   renumberBlocks();
   updateRemoveBtns();
   checkDuplicatePorts();
@@ -195,16 +372,41 @@ function updateRemoveBtns() {
   });
 }
 
+function updatePortTip(bid) {
+  const port = document.getElementById(`port-sel-${bid}`).value;
+  setTip(`port-tip-${bid}`, PORT_TIPS[port] || "");
+}
+
+function updateOutputTip(bid) {
+  const val = document.getElementById(`output-sel-${bid}`).value;
+  const key = document.getElementById(`stype-sel-${bid}`).value;
+  const cfg = SENSOR_TYPES[key];
+  const match = cfg?.outputs.find((o) => o.value === val);
+  setTip(`output-tip-${bid}`, match?.tip || "");
+}
+
+function updateVizTip(bid) {
+  const val = document.getElementById(`viz-sel-${bid}`).value;
+  const match = VIZ_OPTIONS.find((v) => v.value === val);
+  setTip(`viz-tip-${bid}`, match?.tip || "");
+}
+
 function onSensorChange(bid) {
   const key = document.getElementById(`stype-sel-${bid}`).value;
   const cfg = SENSOR_TYPES[key];
   if (!cfg) return;
+
+  setTip(`stype-tip-${bid}`, cfg.tip || "");
+
   document.getElementById(`output-sel-${bid}`).innerHTML = cfg.outputs
-    .map((o) => `<option value="${o}">${o}</option>`)
+    .map((o) => `<option value="${o.value}">${o.value}</option>`)
     .join("");
+
+  updateOutputTip(bid);
+
   const container = document.getElementById(`params-${bid}`);
   container.innerHTML = "";
-  cfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.unit));
+  cfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.label));
 }
 
 function addOptionToDropdown(selectId, inputId) {
@@ -220,18 +422,9 @@ function addOptionToDropdown(selectId, inputId) {
   }
   sel.value = val;
   inp.value = "";
-
-  if (selectId.startsWith("stype-sel-")) {
-    const bid = selectId.replace("stype-sel-", "");
-    const outSel = document.getElementById(`output-sel-${bid}`);
-    if (outSel)
-      outSel.innerHTML = `<option value="">— select output —</option>`;
-    const paramContainer = document.getElementById(`params-${bid}`);
-    if (paramContainer) paramContainer.innerHTML = "";
-  }
 }
 
-function addParamRow(bid, nameVal = "", valueVal = "", unitVal = "") {
+function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {
   const rid = nextUid();
   const container = document.getElementById(`params-${bid}`);
   const row = document.createElement("div");
@@ -239,18 +432,20 @@ function addParamRow(bid, nameVal = "", valueVal = "", unitVal = "") {
   row.dataset.rid = rid;
   row.innerHTML = `
     <div class="field">
-      <label>Name <span class="req">*</span></label>
-      <input type="text" id="pname-${rid}" value="${nameVal}" placeholder="variable name" required>
+      <label>
+        Variable name <span class="req">*</span>
+        ${tooltipText ? tipBadge(tooltipText) : ""}
+      </label>
+      <input type="text" id="pname-${rid}" value="${nameVal}"
+             placeholder="variable name" required>
     </div>
     <div class="field">
       <label>Value <span class="req">*</span></label>
-      <input type="number" id="pval-${rid}" value="${valueVal}" placeholder="0" step="any" required>
+      <input type="number" id="pval-${rid}" value="${valueVal}"
+             placeholder="0" step="any" required>
     </div>
-    <div class="field">
-      <label>Unit</label>
-      <input type="text" id="punit-${rid}" value="${unitVal}" placeholder="">
-    </div>
-    <button class="rem-param-btn" title="Remove row" onclick="removeParamRow(${bid},'${rid}')">−</button>
+    <button class="rem-param-btn" title="Remove row"
+      onclick="removeParamRow(${bid},'${rid}')">−</button>
   `;
   container.appendChild(row);
   updateParamRemoveBtns(bid);
@@ -303,74 +498,57 @@ function validate() {
     el.classList.toggle("error", empty);
     if (empty) valid = false;
   });
-
-  document.querySelectorAll(".sensor-block").forEach((block) => {
-    const bid = block.dataset.bid;
-    const sensorKey = document.getElementById(`stype-sel-${bid}`)?.value;
-    const cfg = SENSOR_TYPES[sensorKey];
-    const hasConfigParams = cfg && cfg.params.length > 0;
-    const pRows = document.querySelectorAll(`#params-${bid} .param-row`);
-    if (hasConfigParams && pRows.length === 0) {
-      alert(
-        `Sensor block ${block.querySelector(".sensor-num").textContent} needs at least one parameter.`,
-      );
-      valid = false;
-    }
-  });
   return valid;
 }
 
-function buildIno(blocks, viz, surveyAnswers = {}) {
+function buildIno(blocks, surveyAnswers = {}) {
   const now = new Date().toISOString().slice(0, 10);
   const numBlocks = blocks.length;
 
   let constants = "";
   blocks.forEach((b, i) => {
     const idx = i + 1;
-    constants += `// ── Sensor ${idx}: ${b.sensor} on port ${b.port} ──\n`;
+    constants += `// Sensor ${idx}: ${b.sensor} on port ${b.port}\n`;
     constants += `const int   SENSOR_${idx}_PIN = ${b.port};\n`;
     b.params.forEach((p) => {
       const constName = `SENSOR_${idx}_${p.name.toUpperCase()}`;
-      const unitNote = p.unit ? `  // ${p.unit}` : "";
-      constants += `const float ${constName.padEnd(30)} = ${p.value};${unitNote}\n`;
+      constants += `const float ${constName.padEnd(32)} = ${p.value};\n`;
     });
     constants += "\n";
   });
 
   function vizBlock(b, idx) {
-    switch (viz) {
+    const wp = parseFloat(
+      b.params.find((p) => p.name === "wp")?.value || "0.12",
+    );
+    const fc = parseFloat(
+      b.params.find((p) => p.name === "fc")?.value || "0.35",
+    );
+    switch (b.viz) {
+      case "none":
+        return `  // no visualization selected`;
       case "bar":
         return `  Serial.println(val_${idx});`;
       case "raw":
-        return `  Serial.print("${b.sensor} [${b.port}] raw: ");\n  Serial.println(val_${idx});`;
-      case "state": {
-        const wp = b.params.find((p) => p.name === "wp")?.value || "0.12";
-        const fc = b.params.find((p) => p.name === "fc")?.value || "0.35";
+        return `  Serial.print("${b.sensor} [${b.port}] raw: "); Serial.println(val_${idx});`;
+      case "state":
         return (
-          `  if (pct_${idx} < ${(wp * 100).toFixed(0)}) Serial.println("${b.sensor} [${b.port}]: DRY");\n` +
-          `  else if (pct_${idx} < ${(fc * 100).toFixed(0)}) Serial.println("${b.sensor} [${b.port}]: MOIST");\n` +
-          `  else Serial.println("${b.sensor} [${b.port}]: WET");`
+          `  if      (pct_${idx} < ${(wp * 100).toFixed(0)}) Serial.println("${b.sensor}: VERY DRY");\n` +
+          `  else if (pct_${idx} < ${(fc * 100).toFixed(0)}) Serial.println("${b.sensor}: DRY");\n` +
+          `  else                                              Serial.println("${b.sensor}: WET");`
         );
-      }
-      case "csv":
-        return `  Serial.print(millis()); Serial.print(","); Serial.print("${b.port}"); Serial.print(","); Serial.println(val_${idx});`;
-      case "json":
-        return `  Serial.print("{\\"sensor\\":\\"${b.sensor}\\",\\"port\\":\\"${b.port}\\",\\"value\\":"); Serial.print(val_${idx}); Serial.println("}");`;
-      case "threshold": {
-        const wp = b.params.find((p) => p.name === "wp")?.value || "0.12";
-        return `  if (pct_${idx} < ${(wp * 100).toFixed(0)}) Serial.println("ALERT: ${b.sensor} [${b.port}] below threshold!");`;
-      }
-      case "average":
-        return `  static float avg_${idx} = 0;\n  avg_${idx} = avg_${idx} * 0.9 + val_${idx} * 0.1;\n  Serial.println(avg_${idx});`;
-      case "oled":
-        return `  display.clearDisplay();\n  display.setCursor(0,${(idx - 1) * 10});\n  display.print("${b.port}:"); display.println(val_${idx});\n  display.display();`;
-      case "color":
+      case "transformed":
         return (
-          `  analogWrite(9,  map(val_${idx}, 0, 1023, 0,   255));  // R\n` +
-          `  analogWrite(10, map(val_${idx}, 0, 1023, 255, 0));    // G`
+          `  float tval_${idx} = pct_${idx};\n` +
+          `  Serial.print("${b.sensor} [${b.port}] 0-100: "); Serial.println(tval_${idx});`
         );
-      case "buzzer":
-        return `  if (val_${idx} < 300) tone(8, 1000, 200);`;
+      case "rate":
+        return (
+          `  static float prev_${idx} = 0;\n` +
+          `  float rate_${idx} = val_${idx} - prev_${idx};\n` +
+          `  prev_${idx} = val_${idx};\n` +
+          `  Serial.print("${b.sensor} rate: "); Serial.println(rate_${idx});`
+        );
       default:
         return `  Serial.println(val_${idx});`;
     }
@@ -390,7 +568,7 @@ function buildIno(blocks, viz, surveyAnswers = {}) {
   const header = blocks
     .map(
       (b, i) =>
-        ` *   Sensor ${i + 1}: ${b.sensor} on ${b.port} → output: ${b.output}`,
+        ` *   Sensor ${i + 1}: ${b.sensor} on ${b.port} → ${b.output} [${b.viz}]`,
     )
     .join("\n");
 
@@ -404,33 +582,26 @@ function buildIno(blocks, viz, surveyAnswers = {}) {
 
   return `/*
  * ════════════════════════════════════════════════
- *  Sensor Code Generator
+ *  Pillowtech Code Generator
  *  Generated : ${now}
  *  Sensors   : ${numBlocks}
- *  Viz mode  : ${viz}
  * ────────────────────────────────────────────────
 ${header}
 ${surveySection} * ════════════════════════════════════════════════
  */
 
-// ── Serial baud rate ──────────────────────────
 #define BAUD_RATE 9600
 
-// ── Pin + calibration constants ───────────────
 ${constants.trimEnd()}
 
-// ─────────────────────────────────────────────
 void setup() {
   Serial.begin(BAUD_RATE);
-  Serial.println("Hello World.");
+  Serial.println("Sketch ready.");
 }
 
-// ─────────────────────────────────────────────
 void loop() {
 
-  // Read all sensors
 ${loopReads}
-  // Output
 ${loopViz}
   delay(500);
 }
@@ -448,7 +619,6 @@ function downloadFile(content, filename) {
 }
 
 let _pendingBlocks = [];
-let _pendingViz = "";
 let _pendingFilename = "";
 
 function handleGenerate() {
@@ -466,18 +636,17 @@ function handleGenerate() {
       params.push({
         name: document.getElementById(`pname-${rid}`)?.value || "",
         value: document.getElementById(`pval-${rid}`)?.value || "",
-        unit: document.getElementById(`punit-${rid}`)?.value || "",
       });
     });
     _pendingBlocks.push({
       port: document.getElementById(`port-sel-${bid}`).value,
       sensor: document.getElementById(`stype-sel-${bid}`).value,
       output: document.getElementById(`output-sel-${bid}`).value,
+      viz: document.getElementById(`viz-sel-${bid}`).value,
       params,
     });
   });
 
-  _pendingViz = document.getElementById("viz").value;
   _pendingFilename =
     _pendingBlocks.length === 1
       ? `sensor_${_pendingBlocks[0].port}.ino`
@@ -540,7 +709,7 @@ function confirmSurvey() {
 
   closeSurvey();
 
-  const code = buildIno(_pendingBlocks, _pendingViz, answers);
+  const code = buildIno(_pendingBlocks, answers);
   downloadFile(code, _pendingFilename);
 
   document.getElementById("preview-code").textContent = code;
@@ -558,4 +727,5 @@ function copyPreview() {
   });
 }
 
+initTooltips();
 addBlock();

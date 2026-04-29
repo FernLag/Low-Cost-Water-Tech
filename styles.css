@@ -141,7 +141,7 @@ body {
   font-weight: 700;
   color: #4a6010;
   letter-spacing: 0.07em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .section-body {
@@ -161,7 +161,8 @@ body {
 
 .field select,
 .field input[type="text"],
-.field input[type="number"] {
+.field input[type="number"],
+.field input[type="email"] {
   width: 100%;
   padding: 7px 9px;
   border-radius: 7px;
@@ -240,7 +241,7 @@ body {
 
 .param-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 72px 28px;
+  grid-template-columns: 1fr 1fr 28px;
   gap: 8px;
   align-items: end;
   margin-bottom: 8px;
@@ -320,24 +321,6 @@ body {
   border-color: #77960c;
   color: #3a4f0a;
   background: #f4f8e8;
-}
-
-.viz-section {
-  background: #fff;
-  border: 1px solid #c8d8a0;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 1px 4px rgba(80, 100, 20, 0.08);
-}
-
-.slabel {
-  font-size: 10px;
-  font-weight: 700;
-  color: #77960c;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
 }
 
 .port-warning {
@@ -442,21 +425,6 @@ body {
   overflow-x: auto;
   max-height: 380px;
   overflow-y: auto;
-}
-
-@media (max-width: 520px) {
-  .row2 {
-    grid-template-columns: 1fr;
-  }
-  .param-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  .param-row .field:nth-child(3) {
-    display: none;
-  }
-  body {
-    padding: 24px 12px 60px;
-  }
 }
 
 .survey-overlay {
@@ -569,5 +537,41 @@ body {
   box-shadow: 0 2px 6px rgba(18, 88, 168, 0.25);
 }
 .survey-confirm-btn:hover {
+  background: #0e4a8f;
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 24px 12px 60px;
+  }
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+  .param-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.tip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: green;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, serif;
+  cursor: help;
+  margin-left: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 0.15s;
+}
+.tip-badge:hover {
   background: #0e4a8f;
 }

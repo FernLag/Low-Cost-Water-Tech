@@ -4,18 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
-    <title>Sensor Code Generator</title>
+    <title>Pillowtech Code Generator</title>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>Sensor code generator</h1>
+        <h1>Pillowtech code generator</h1>
         <p>
-          One port per block. Use the <strong>+</strong> buttons to add options
-          to each dropdown or add more parameter rows.
+          One port per block. Visualization is set per block so the same sensor
+          can show different outputs.
         </p>
         <span class="req-note">
-          Fields marked <span class="req">*</span> are mandatory
+          Fields marked <span class="req">*</span> are required
         </span>
       </div>
 
@@ -25,34 +25,6 @@
       <button class="add-block-btn" onclick="addBlock()">
         + Add sensor block
       </button>
-
-      <div class="viz-section">
-        <div class="slabel">Visualization — optional</div>
-        <div class="field">
-          <label>Visualization type</label>
-          <select id="viz">
-            <option value="none">No selection</option>
-            <option value="bar">Loading bar</option>
-            <option value="raw">Raw value</option>
-            <option value="state">State — very dry / dry / wet</option>
-            <option value="transformed">Transformed Raw Value 0–100</option>
-            <option value="rate">Rate of change (future)</option>
-          </select>
-          <div class="add-option-row" style="margin-top: 6px">
-            <input
-              type="text"
-              id="viz-new"
-              placeholder="Add custom visualization…"
-            />
-            <button
-              class="add-option-btn"
-              onclick="addOptionToDropdown('viz', 'viz-new')"
-            >
-              + Add
-            </button>
-          </div>
-        </div>
-      </div>
 
       <button class="gen-btn" onclick="handleGenerate()">
         Generate + download .ino

@@ -189,6 +189,13 @@ body {
   background: #fff8f8;
 }
 
+.field input[readonly] {
+  background: #f0f2e8;
+  color: #6b7a4a;
+  cursor: not-allowed;
+  border-color: #d0daa8;
+}
+
 .err-msg {
   font-size: 11px;
   color: #8b1a1a;
@@ -198,100 +205,15 @@ body {
   display: block;
 }
 
-.add-option-row {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  margin-top: 8px;
-}
-
-.add-option-row input {
-  flex: 1;
-  padding: 6px 9px;
-  border-radius: 7px;
-  border: 1px solid #c8d8a0;
-  background: #fafcf5;
-  font-size: 12px;
-  font-family: inherit;
-  color: #1a1a18;
-}
-
-.add-option-row input:focus {
-  outline: none;
-  border-color: #77960c;
-  box-shadow: 0 0 0 3px rgba(119, 150, 12, 0.12);
-}
-
-.add-option-btn {
-  padding: 6px 14px;
-  border-radius: 7px;
-  border: 1px solid #b0cc78;
-  background: #eef4dc;
-  color: #3a4f0a;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.add-option-btn:hover {
-  background: #d8ecb0;
-}
-
 .param-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 28px;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   align-items: end;
   margin-bottom: 8px;
 }
 .param-row:last-child {
   margin-bottom: 0;
-}
-
-.rem-param-btn {
-  width: 28px;
-  height: 34px;
-  border-radius: 6px;
-  border: 1px solid #f5c0c0;
-  background: #fff0f0;
-  color: #8b1a1a;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-}
-.rem-param-btn:hover {
-  background: #ffe0e0;
-}
-.rem-param-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.add-param-btn {
-  width: 100%;
-  padding: 7px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px dashed #b0cc78;
-  background: none;
-  color: #5a7010;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.add-param-btn:hover {
-  background: #f0f8e0;
-  color: #3a4f0a;
 }
 
 .row2 {
@@ -540,18 +462,6 @@ body {
   background: #0e4a8f;
 }
 
-@media (max-width: 520px) {
-  body {
-    padding: 24px 12px 60px;
-  }
-  .row2 {
-    grid-template-columns: 1fr;
-  }
-  .param-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 .tip-badge {
   display: inline-flex;
   align-items: center;
@@ -570,8 +480,21 @@ body {
   vertical-align: middle;
   flex-shrink: 0;
   user-select: none;
+  text-transform: none;
   transition: background 0.15s;
 }
 .tip-badge:hover {
   background: #0e4a8f;
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 24px 12px 60px;
+  }
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+  .param-row {
+    grid-template-columns: 1fr;
+  }
 }

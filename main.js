@@ -332,7 +332,6 @@ function addBlock() {
         </div>
         <div class="section-body">
           <div id="params-${bid}"></div>
-          <button class="add-param-btn" onclick="addParamRow(${bid})">+ Add parameter</button>
         </div>
       </div>
 
@@ -418,15 +417,14 @@ function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {
         ${tooltipText ? tipBadge(tooltipText) : ""}
       </label>
       <input type="text" id="pname-${rid}" value="${nameVal}"
-             placeholder="variable name" required>
+             placeholder="variable name" required readonly>
     </div>
     <div class="field">
       <label>Value <span class="req">*</span></label>
       <input type="number" id="pval-${rid}" value="${valueVal}"
              placeholder="0" step="any" required>
     </div>
-    <button class="rem-param-btn" title="Remove row"
-      onclick="removeParamRow(${bid},'${rid}')">−</button>
+
   `;
   container.appendChild(row);
   updateParamRemoveBtns(bid);

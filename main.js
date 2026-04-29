@@ -302,16 +302,10 @@ function addBlock() {
         </div>
         <div class="section-body">
           <div class="field">
-            <select id="output-sel-${bid}" required
-              onchange="updateOutputTip(${bid})">
+            <select id="output-sel-${bid}" required onchange="updateOutputTip(${bid})">
               ${outputOpts}
             </select>
             <span class="err-msg" id="err-output-${bid}">Required.</span>
-          </div>
-          <div class="add-option-row">
-            <input type="text" id="output-new-${bid}" placeholder="Add custom output option…">
-            <button class="add-option-btn"
-              onclick="addOptionToDropdown('output-sel-${bid}','output-new-${bid}')">+ Add</button>
           </div>
         </div>
       </div>
@@ -328,11 +322,6 @@ function addBlock() {
             <select id="viz-sel-${bid}" onchange="updateVizTip(${bid})">
               ${vizOpts}
             </select>
-          </div>
-          <div class="add-option-row">
-            <input type="text" id="viz-new-${bid}" placeholder="Add custom visualization…">
-            <button class="add-option-btn"
-              onclick="addOptionToDropdown('viz-sel-${bid}','viz-new-${bid}')">+ Add</button>
           </div>
         </div>
       </div>
@@ -414,21 +403,6 @@ function onSensorChange(bid) {
   const container = document.getElementById(`params-${bid}`);
   container.innerHTML = "";
   cfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.label));
-}
-
-function addOptionToDropdown(selectId, inputId) {
-  const sel = document.getElementById(selectId);
-  const inp = document.getElementById(inputId);
-  if (!sel || !inp) return;
-  const val = inp.value.trim();
-  if (!val) return;
-  if (![...sel.options].some((o) => o.value === val)) {
-    const opt = document.createElement("option");
-    opt.value = opt.textContent = val;
-    sel.appendChild(opt);
-  }
-  sel.value = val;
-  inp.value = "";
 }
 
 function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {

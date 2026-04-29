@@ -17,11 +17,11 @@ const SENSOR_TYPES = {
       },
       {
         value: "Rate of change",
-        tip: "Difference between current and previous reading per loop iteration. Useful for detecting irrigation or rain events.",
+        tip: "",
       },
       {
         value: "1-2-3 point calibration",
-        tip: "Applies a 1, 2, or 3-point linear correction to convert raw values.",
+        tip: "",
       },
       {
         value: "Threshold (very dry/dry/wet)",
@@ -69,7 +69,7 @@ const SENSOR_TYPES = {
     outputs: [
       {
         value: "Raw value",
-        tip: "Unprocessed ADC readings from all three Watermark sensors.",
+        tip: "",
       },
       {
         value: "Transformed raw value",
@@ -77,11 +77,11 @@ const SENSOR_TYPES = {
       },
       {
         value: "Tension (3 locations)",
-        tip: "Soil water tension in centibars at each of the three sensor positions — top, middle, and bottom of the profile.",
+        tip: "",
       },
       {
         value: "Temperature",
-        tip: "Temperature reading from the 200SSVA3 probe used to correct tension readings for temperature effects.",
+        tip: "",
       },
     ],
     params: [],

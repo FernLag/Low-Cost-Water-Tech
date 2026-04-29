@@ -133,6 +133,13 @@ const VIZ_OPTIONS = [
 
 const SURVEY_QUESTIONS = [
   {
+    key: "filename",
+    label: "File name",
+    type: "text",
+    required: true,
+    placeholder: "e.g. apples_field2  (no spaces, no .ino)",
+  },
+  {
     key: "name",
     label: "Your name",
     type: "text",
@@ -572,7 +579,9 @@ function buildIno(blocks, surveyAnswers = {}) {
     )
     .join("\n");
 
-  const surveyLines = SURVEY_QUESTIONS.filter((q) => surveyAnswers[q.key])
+  const surveyLines = SURVEY_QUESTIONS.filter(
+    (q) => q.key !== "filename" && surveyAnswers[q.key],
+  )
     .map((q) => ` *   ${q.label.padEnd(24)}: ${surveyAnswers[q.key]}`)
     .join("\n");
 
@@ -710,11 +719,18 @@ function confirmSurvey() {
   closeSurvey();
 
   const code = buildIno(_pendingBlocks, answers);
-  downloadFile(code, _pendingFilename);
+
+  const rawName = (answers.filename || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/\.ino$/i, "");
+  const filename = rawName ? rawName + ".ino" : _pendingFilename;
+
+  downloadFile(code, filename);
 
   document.getElementById("preview-code").textContent = code;
   document.getElementById("preview-wrap").classList.add("show");
-  document.getElementById("success-filename").textContent = _pendingFilename;
+  document.getElementById("success-filename").textContent = filename;
   document.getElementById("success-banner").classList.add("show");
 }
 

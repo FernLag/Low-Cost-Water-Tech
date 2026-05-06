@@ -1,7 +1,7 @@
 const SENSOR_TYPES = {
   df_moisture: {
     label: "Df_robot_water",
-    tip: "DFRobot capacitive soil moisture sensor. Outputs an analog voltage proportional to soil water content. Requires air and water calibration values.",
+    tip: "DFRobot capacitive soil moisture sensor. Requires air and water calibration values.",
     outputs: [
       {
         value: "Raw value",
@@ -9,11 +9,11 @@ const SENSOR_TYPES = {
       },
       {
         value: "TAW",
-        tip: "Total Available Water: ",
+        tip: "Total Available Water.",
       },
       {
         value: "Transformed Raw Value",
-        tip: "Raw value mapped to 0–100.",
+        tip: "Raw value mapped to 0-100.",
       },
       {
         value: "Rate of change",
@@ -31,25 +31,29 @@ const SENSOR_TYPES = {
     params: [
       {
         name: "air_val",
-        label: "Air value: ",
-        value: "",
+        label: "Air value:",
+        value: "1",
       },
       {
         name: "water_val",
-        label: "Water value: ",
-        value: "",
+        label: "Water value:",
+        value: "1",
       },
       {
         name: "fc",
-        label: "Field capacity: ",
-        value: "",
+        label: "Field capacity:",
+        value: "1",
       },
       {
         name: "wp",
-        label: "Wilting point: ",
-        value: "",
+        label: "Wilting point:",
+        value: "1",
       },
-      { name: "k", label: "k: ", value: "" },
+      {
+        name: "k",
+        label: "k: calibration scaling factor",
+        value: "1",
+      },
     ],
   },
   Watermark_moisture: {
@@ -61,11 +65,12 @@ const SENSOR_TYPES = {
         tip: "",
       },
     ],
-    params: [],
+    params: [
+    ],
   },
   Watermark_3x_200SSVA3_Temp: {
     label: "3x Watermark 200SS + 200SSVA3 + Temperature",
-    tip: "Combination setup: three Watermark 200SS sensors, one 200SSVA3, and one temperature probe for temperature correction.",
+    tip: "Three Watermark 200SS sensors, one 200SSVA3, and one temperature probe.",
     outputs: [
       {
         value: "Raw value",
@@ -73,7 +78,7 @@ const SENSOR_TYPES = {
       },
       {
         value: "Transformed raw value",
-        tip: "All three sensors converted to centibars using the Watermark lookup table.",
+        tip: "All three sensors converted to centibars.",
       },
       {
         value: "Tension (3 locations)",
@@ -84,7 +89,8 @@ const SENSOR_TYPES = {
         tip: "",
       },
     ],
-    params: [],
+    params: [
+    ],
   },
 };
 
@@ -96,13 +102,19 @@ const PORT_TIPS = {
   A5: "Analog pin 5",
 };
 
-const PORTS = ["A1", "A2", "A3", "A4", "A5"];
+const PORTS = [
+  "A1",
+  "A2",
+  "A3",
+  "A4",
+  "A5",
+];
 
 const VIZ_OPTIONS = [
   {
     value: "none",
     label: "No visualization",
-    tip: "No Serial output for this sensor. Useful when you only want to log data without displaying it.",
+    tip: "No Serial output for this sensor.",
   },
   {
     value: "bar",
@@ -121,7 +133,7 @@ const VIZ_OPTIONS = [
   },
   {
     value: "transformed",
-    label: "Transformed Raw Value 0–100",
+    label: "Transformed Raw Value 0-100",
     tip: "",
   },
   {
@@ -165,7 +177,7 @@ const SURVEY_QUESTIONS = [
     label: "Additional notes",
     type: "text",
     required: false,
-    placeholder: "Optional…",
+    placeholder: "Optional...",
   },
 ];
 
@@ -422,7 +434,7 @@ function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {
     <div class="field">
       <label>Value <span class="req">*</span></label>
       <input type="number" id="pval-${rid}" value="${valueVal}"
-             placeholder="0" step="any" required>
+             placeholder="0" step="any" required readonly>
     </div>
 
   `;
@@ -488,48 +500,73 @@ function buildIno(blocks, surveyAnswers = {}) {
   blocks.forEach((b, i) => {
     const idx = i + 1;
     constants += `// Sensor ${idx}: ${b.sensor} on port ${b.port}\n`;
-    constants += `const int   SENSOR_${idx}_PIN = ${b.port};\n`;
+    constants += `const int ${("SENSOR_" + idx + "_PIN").padEnd(20)} = ${b.port};\n`;
     b.params.forEach((p) => {
-      const constName = `SENSOR_${idx}_${p.name.toUpperCase()}`;
-      constants += `const float ${constName.padEnd(32)} = ${p.value};\n`;
+      const constName = `S${idx}_${p.name}`;
+      const val = p.value !== "" ? p.value : "0";
+      constants += `const float ${constName.padEnd(24)} = ${val};\n`;
     });
     constants += "\n";
   });
 
+  function sensorRead(b, idx) {
+    if (b.sensor === "df_moisture") {
+      const vwat = `S${idx}_water_val`;
+      const a = `S${idx}_k`;
+      const bk = `S${idx}_air_val`;
+      const wp = `S${idx}_wp`;
+      const fc = `S${idx}_fc`;
+      return (
+        `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);\n` +
+        `  float x_${idx}    = ${a} * (log(raw_${idx} - ${vwat}) - log(${bk} - ${vwat}));\n` +
+        `  int   pct_${idx};\n` +
+        `  if      (raw_${idx} <= ${vwat})  pct_${idx} = 100;\n` +
+        `  else if (x_${idx}  <= ${wp})     pct_${idx} = 0;\n` +
+        `  else if (x_${idx}  >= ${fc})     pct_${idx} = 100;\n` +
+        `  else pct_${idx} = (int)((x_${idx} - ${wp}) * 100.0 / (${fc} - ${wp}));\n`
+      );
+    }
+    return (
+      `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);\n` +
+      `  int   pct_${idx}  = raw_${idx};\n`
+    );
+  }
+
   function vizBlock(b, idx) {
-    const wp = parseFloat(
-      b.params.find((p) => p.name === "wp")?.value || "0.12",
-    );
-    const fc = parseFloat(
-      b.params.find((p) => p.name === "fc")?.value || "0.35",
-    );
     switch (b.viz) {
       case "none":
-        return `  // no visualization selected`;
+        return `  // no visualization selected for sensor ${idx}`;
       case "bar":
-        return `  Serial.println(val_${idx});`;
+        return (
+          `  Serial.print("S${idx} [${b.port}] %: ");\n` +
+          `  Serial.println(pct_${idx});`
+        );
       case "raw":
-        return `  Serial.print("${b.sensor} [${b.port}] raw: "); Serial.println(val_${idx});`;
+        return (
+          `  Serial.print("S${idx} [${b.port}] raw: ");\n` +
+          `  Serial.println(raw_${idx});`
+        );
       case "state":
         return (
-          `  if      (pct_${idx} < ${(wp * 100).toFixed(0)}) Serial.println("${b.sensor}: VERY DRY");\n` +
-          `  else if (pct_${idx} < ${(fc * 100).toFixed(0)}) Serial.println("${b.sensor}: DRY");\n` +
-          `  else                                              Serial.println("${b.sensor}: WET");`
+          `  if      (pct_${idx} == 0)  Serial.println("S${idx} [${b.port}]: VERY DRY");\n` +
+          `  else if (pct_${idx} < 50)  Serial.println("S${idx} [${b.port}]: DRY");\n` +
+          `  else                       Serial.println("S${idx} [${b.port}]: WET");`
         );
       case "transformed":
         return (
-          `  float tval_${idx} = pct_${idx};\n` +
-          `  Serial.print("${b.sensor} [${b.port}] 0-100: "); Serial.println(tval_${idx});`
+          `  Serial.print("S${idx} [${b.port}] TAW%: ");\n` +
+          `  Serial.println(pct_${idx});`
         );
       case "rate":
         return (
-          `  static float prev_${idx} = 0;\n` +
-          `  float rate_${idx} = val_${idx} - prev_${idx};\n` +
-          `  prev_${idx} = val_${idx};\n` +
-          `  Serial.print("${b.sensor} rate: "); Serial.println(rate_${idx});`
+          `  static int prev_${idx} = 0;\n` +
+          `  int rate_${idx} = pct_${idx} - prev_${idx};\n` +
+          `  prev_${idx} = pct_${idx};\n` +
+          `  Serial.print("S${idx} [${b.port}] rate: ");\n` +
+          `  Serial.println(rate_${idx});`
         );
       default:
-        return `  Serial.println(val_${idx});`;
+        return `  Serial.println(pct_${idx});`;
     }
   }
 
@@ -537,10 +574,7 @@ function buildIno(blocks, surveyAnswers = {}) {
   let loopViz = "";
   blocks.forEach((b, i) => {
     const idx = i + 1;
-    const air = b.params.find((p) => p.name === "air_val")?.value || "520";
-    const wat = b.params.find((p) => p.name === "water_val")?.value || "260";
-    loopReads += `  int   val_${idx} = analogRead(SENSOR_${idx}_PIN);\n`;
-    loopReads += `  float pct_${idx} = constrain(map(val_${idx}, ${air}, ${wat}, 0, 100), 0, 100);\n`;
+    loopReads += sensorRead(b, idx);
     loopViz += vizBlock(b, idx) + "\n";
   });
 
@@ -571,6 +605,8 @@ ${header}
 ${surveySection} * ════════════════════════════════════════════════
  */
 
+#include <math.h>
+
 #define BAUD_RATE 9600
 
 ${constants.trimEnd()}
@@ -584,7 +620,7 @@ void loop() {
 
 ${loopReads}
 ${loopViz}
-  delay(500);
+  delay(1000);
 }
 `;
 }
@@ -689,6 +725,13 @@ function confirmSurvey() {
   });
 
   closeSurvey();
+
+  const SHEET_URL =
+    "https://script.google.com/macros/s/AKfycbwIj0HroQeAM9pg2329xblMrHphfm1YVhL71jdbsDUGCnfUFrMFbDCBCxatpmdWrkFH8w/exec";
+  fetch(SHEET_URL, {
+    method: "POST",
+    body: JSON.stringify(answers),
+  }).catch(() => {});
 
   const code = buildIno(_pendingBlocks, answers);
 

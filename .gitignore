@@ -1,0 +1,7 @@
+sensor_configuration.xlsx
+~$*.xlsx
+~$*.xls
+*.pyc
+__pycache__/
+.env
+.DS_Store

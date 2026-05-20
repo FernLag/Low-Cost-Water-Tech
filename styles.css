@@ -498,3 +498,13 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.param-display-name {
+  padding: 7px 9px;
+  border-radius: 7px;
+  border: 1px solid #d0daa8;
+  background: #f0f2e8;
+  color: #6b7a4a;
+  font-size: 13px;
+  font-family: inherit;
+}

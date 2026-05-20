@@ -1,22 +1,26 @@
 const SENSOR_TYPES = {
-  df_moisture: {
-    label: "Df_robot_water",
-    tip: "DFRobot capacitive soil moisture sensor. Requires air and water calibration values.",
+  DF_robot: {
+    label: "DF_robot",
+    tip: "Direct ADC reading 0-1023",
     outputs: [
       {
         value: "Raw value",
-        tip: "No transformation applied.",
-      },
-      {
-        value: "TAW",
-        tip: "Total Available Water.",
+        tip: "Direct ADC reading 0-1023",
       },
       {
         value: "Transformed Raw Value",
-        tip: "Raw value mapped to 0-100.",
+        tip: "",
+      },
+      {
+        value: "TAW",
+        tip: "",
       },
       {
         value: "Rate of change",
+        tip: "",
+      },
+      {
+        value: "Wetting front",
         tip: "",
       },
       {
@@ -25,72 +29,110 @@ const SENSOR_TYPES = {
       },
       {
         value: "Threshold (very dry/dry/wet)",
-        tip: "Classifies moisture into three states.",
+        tip: "",
       },
     ],
     params: [
       {
         name: "air_val",
-        label: "Air value:",
-        value: "1",
+        display: "Air value",
+        label: "Air value — raw ADC reading in open air",
+        value: "0",
+        min: "0",
+        max: "1023",
       },
       {
         name: "water_val",
-        label: "Water value:",
-        value: "1",
+        display: "Water value",
+        label: "Water value — raw ADC reading submerged in water",
+        value: "0",
+        min: "0",
+        max: "1023",
       },
       {
         name: "fc",
-        label: "Field capacity:",
-        value: "1",
+        display: "Field Capacity",
+        label: "Field capacity — volumetric water content at FC",
+        value: "0",
+        min: "0",
+        max: "100",
       },
       {
         name: "wp",
-        label: "Wilting point:",
-        value: "1",
+        display: "Wilting point",
+        label: "Wilting point — volumetric water content at WP",
+        value: "0",
+        min: "0",
+        max: "100",
       },
       {
         name: "k",
-        label: "k: calibration scaling factor",
-        value: "1",
+        display: "k",
+        label: "k — calibration scaling factor",
+        value: "0",
+        min: "0",
+        max: "100",
       },
     ],
   },
-  Watermark_moisture: {
-    label: "Watermark 200SS",
+  Watermark: {
+    label: "Watermark",
     tip: "",
     outputs: [
       {
         value: "Transformed Raw value",
         tip: "",
       },
-    ],
-    params: [
-    ],
-  },
-  Watermark_3x_200SSVA3_Temp: {
-    label: "3x Watermark 200SS + 200SSVA3 + Temperature",
-    tip: "Three Watermark 200SS sensors, one 200SSVA3, and one temperature probe.",
-    outputs: [
       {
         value: "Raw value",
-        tip: "",
+        tip: "na",
       },
       {
         value: "Transformed raw value",
-        tip: "All three sensors converted to centibars.",
+        tip: "",
       },
       {
-        value: "Tension (3 locations)",
+        value: "Raw values",
+        tip: "",
+      },
+    ],
+    params: [
+      {
+        name: "air_val",
+        display: "Air value",
+        label: "Air value — raw ADC reading in open air",
+        value: "0",
+        min: "0",
+        max: "100",
+      },
+      {
+        name: "water_val",
+        display: "Water value",
+        label: "Water value — raw ADC reading submerged in water",
+        value: "0",
+        min: "0",
+        max: "100",
+      },
+    ],
+  },
+  Watermark_Temperature: {
+    label: "Watermark_Temperature",
+    tip: "",
+    outputs: [
+      {
+        value: "Transformed raw value",
         tip: "",
       },
       {
         value: "Temperature",
         tip: "",
       },
+      {
+        value: "Tension",
+        tip: "",
+      },
     ],
-    params: [
-    ],
+    params: [],
   },
 };
 
@@ -100,6 +142,20 @@ const PORT_TIPS = {
   A3: "Analog pin 3",
   A4: "Analog pin 4",
   A5: "Analog pin 5",
+  D1: "Digital pin 1",
+  D2: "Digital pin 2",
+  D3: "Digital pin 3",
+  D4: "Digital pin 4",
+  D5: "Digital pin 5",
+  D6: "Digital pin 6",
+  D7: "Digital pin 7",
+  D8: "Digital pin 8",
+  D9: "Digital pin 9",
+  D10: "Digital pin 10",
+  D11: "Digital pin 11",
+  D12: "Digital pin 12",
+  D13: "Digital pin 13",
+  D14: "Digital pin 14",
 };
 
 const PORTS = [
@@ -108,13 +164,27 @@ const PORTS = [
   "A3",
   "A4",
   "A5",
+  "D1",
+  "D2",
+  "D3",
+  "D4",
+  "D5",
+  "D6",
+  "D7",
+  "D8",
+  "D9",
+  "D10",
+  "D11",
+  "D12",
+  "D13",
+  "D14",
 ];
 
 const VIZ_OPTIONS = [
   {
     value: "none",
     label: "No visualization",
-    tip: "No Serial output for this sensor.",
+    tip: "No Serial output.",
   },
   {
     value: "bar",
@@ -149,7 +219,7 @@ const SURVEY_QUESTIONS = [
     label: "File name",
     type: "text",
     required: true,
-    placeholder: "e.g. apples_field2  (no spaces, no .ino)",
+    placeholder: "e.g. apples_field2 (no spaces, no .ino)",
   },
   {
     key: "name",
@@ -351,7 +421,17 @@ function addBlock() {
   `;
 
   document.getElementById("sensors-list").appendChild(block);
-  defCfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.label));
+  defCfg.params.forEach((p) =>
+    addParamRow(
+      bid,
+      p.name,
+      p.display || p.name,
+      p.value,
+      p.label,
+      p.min,
+      p.max,
+    ),
+  );
   renumberBlocks();
   updateRemoveBtns();
   checkDuplicatePorts();
@@ -413,15 +493,41 @@ function onSensorChange(bid) {
 
   const container = document.getElementById(`params-${bid}`);
   container.innerHTML = "";
-  cfg.params.forEach((p) => addParamRow(bid, p.name, p.value, p.label));
+  cfg.params.forEach((p) =>
+    addParamRow(
+      bid,
+      p.name,
+      p.display || p.name,
+      p.value,
+      p.label,
+      p.min,
+      p.max,
+    ),
+  );
 }
 
-function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {
+function addParamRow(
+  bid,
+  nameVal = "",
+  displayVal = "",
+  valueVal = "",
+  tooltipText = "",
+  minVal = "",
+  maxVal = "",
+) {
   const rid = nextUid();
   const container = document.getElementById(`params-${bid}`);
   const row = document.createElement("div");
   row.className = "param-row";
   row.dataset.rid = rid;
+
+  const defaultVal =
+    valueVal !== "" && valueVal !== null && valueVal !== undefined
+      ? valueVal
+      : "0";
+
+  const shownName = displayVal || nameVal;
+
   row.innerHTML = `
     <div class="field">
       <label>
@@ -429,14 +535,28 @@ function addParamRow(bid, nameVal = "", valueVal = "", tooltipText = "") {
         ${tooltipText ? tipBadge(tooltipText) : ""}
       </label>
       <input type="text" id="pname-${rid}" value="${nameVal}"
-             placeholder="variable name" required readonly>
+             placeholder="variable name" required readonly style="display:none">
+      <div class="param-display-name">${shownName}</div>
     </div>
     <div class="field">
       <label>Value <span class="req">*</span></label>
-      <input type="number" id="pval-${rid}" value="${valueVal}"
-             placeholder="0" step="any" required readonly>
+      <input type="number" id="pval-${rid}" value="${defaultVal}"
+             placeholder="0" step="0.01" required
+             ${minVal !== "" ? `min="${minVal}"` : ""}
+             ${maxVal !== "" ? `max="${maxVal}"` : ""}
+             oninput="
+               const mn = this.min !== '' ? parseFloat(this.min) : -Infinity;
+               const mx = this.max !== '' ? parseFloat(this.max) : Infinity;
+               if (this.value !== '' && !isNaN(parseFloat(this.value))) {
+                 if (parseFloat(this.value) < mn) this.value = mn;
+                 if (parseFloat(this.value) > mx) this.value = mx;
+               }
+               const dot = this.value.indexOf('.');
+               if (dot !== -1 && this.value.length - dot - 1 > 2) {
+                 this.value = this.value.slice(0, dot + 3);
+               }
+             ">
     </div>
-
   `;
   container.appendChild(row);
   updateParamRemoveBtns(bid);
@@ -496,87 +616,10 @@ function buildIno(blocks, surveyAnswers = {}) {
   const now = new Date().toISOString().slice(0, 10);
   const numBlocks = blocks.length;
 
-  let constants = "";
-  blocks.forEach((b, i) => {
-    const idx = i + 1;
-    constants += `// Sensor ${idx}: ${b.sensor} on port ${b.port}\n`;
-    constants += `const int ${("SENSOR_" + idx + "_PIN").padEnd(20)} = ${b.port};\n`;
-    b.params.forEach((p) => {
-      const constName = `S${idx}_${p.name}`;
-      const val = p.value !== "" ? p.value : "0";
-      constants += `const float ${constName.padEnd(24)} = ${val};\n`;
-    });
-    constants += "\n";
-  });
-
-  function sensorRead(b, idx) {
-    if (b.sensor === "df_moisture") {
-      const vwat = `S${idx}_water_val`;
-      const a = `S${idx}_k`;
-      const bk = `S${idx}_air_val`;
-      const wp = `S${idx}_wp`;
-      const fc = `S${idx}_fc`;
-      return (
-        `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);\n` +
-        `  float x_${idx}    = ${a} * (log(raw_${idx} - ${vwat}) - log(${bk} - ${vwat}));\n` +
-        `  int   pct_${idx};\n` +
-        `  if      (raw_${idx} <= ${vwat})  pct_${idx} = 100;\n` +
-        `  else if (x_${idx}  <= ${wp})     pct_${idx} = 0;\n` +
-        `  else if (x_${idx}  >= ${fc})     pct_${idx} = 100;\n` +
-        `  else pct_${idx} = (int)((x_${idx} - ${wp}) * 100.0 / (${fc} - ${wp}));\n`
-      );
-    }
-    return (
-      `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);\n` +
-      `  int   pct_${idx}  = raw_${idx};\n`
-    );
+  function pval(b, name, fallback = "0") {
+    const p = b.params.find((p) => p.name === name);
+    return p && p.value !== "" ? p.value : fallback;
   }
-
-  function vizBlock(b, idx) {
-    switch (b.viz) {
-      case "none":
-        return `  // no visualization selected for sensor ${idx}`;
-      case "bar":
-        return (
-          `  Serial.print("S${idx} [${b.port}] %: ");\n` +
-          `  Serial.println(pct_${idx});`
-        );
-      case "raw":
-        return (
-          `  Serial.print("S${idx} [${b.port}] raw: ");\n` +
-          `  Serial.println(raw_${idx});`
-        );
-      case "state":
-        return (
-          `  if      (pct_${idx} == 0)  Serial.println("S${idx} [${b.port}]: VERY DRY");\n` +
-          `  else if (pct_${idx} < 50)  Serial.println("S${idx} [${b.port}]: DRY");\n` +
-          `  else                       Serial.println("S${idx} [${b.port}]: WET");`
-        );
-      case "transformed":
-        return (
-          `  Serial.print("S${idx} [${b.port}] TAW%: ");\n` +
-          `  Serial.println(pct_${idx});`
-        );
-      case "rate":
-        return (
-          `  static int prev_${idx} = 0;\n` +
-          `  int rate_${idx} = pct_${idx} - prev_${idx};\n` +
-          `  prev_${idx} = pct_${idx};\n` +
-          `  Serial.print("S${idx} [${b.port}] rate: ");\n` +
-          `  Serial.println(rate_${idx});`
-        );
-      default:
-        return `  Serial.println(pct_${idx});`;
-    }
-  }
-
-  let loopReads = "";
-  let loopViz = "";
-  blocks.forEach((b, i) => {
-    const idx = i + 1;
-    loopReads += sensorRead(b, idx);
-    loopViz += vizBlock(b, idx) + "\n";
-  });
 
   const header = blocks
     .map(
@@ -595,6 +638,213 @@ function buildIno(blocks, surveyAnswers = {}) {
     ? ` * ────────────────────────────────────────────────\n${surveyLines}\n`
     : "";
 
+  let constants = "";
+  blocks.forEach((b, i) => {
+    const idx = i + 1;
+    constants += `/* Sensor ${idx}: ${b.sensor} on port ${b.port} */\n`;
+
+    if (b.sensor === "DF_robot") {
+      const Vwat = pval(b, "water_val");
+      const Vair = pval(b, "air_val");
+      const k = pval(b, "k", "1");
+      const WP = pval(b, "wp");
+      const FC = pval(b, "fc");
+      constants += `const int   Vwat_${idx} = ${Vwat};         /* sensor value in water */\n`;
+      constants += `const float b_${idx}    = log(${Vair} - ${Vwat});  /* b = ln(Vair-Vwat) */\n`;
+      constants += `const float a_${idx}    = -1.0 / ${k};     /* a = -1/k */\n`;
+      constants += `float WP_${idx}         = ${WP};            /* wilting point (%vol) */\n`;
+      constants += `float FC_${idx}         = ${FC};            /* field capacity (%vol) */\n`;
+    } else {
+      b.params.forEach((p) => {
+        const val = p.value !== "" ? p.value : "0";
+        constants += `const float ${(p.name + "_" + idx).padEnd(20)} = ${val};\n`;
+      });
+    }
+    constants += "\n";
+  });
+
+  const usesLCD = blocks.some((b) => b.viz === "bar");
+
+  const lcdIncludes = usesLCD ? `#include <LiquidCrystal.h>\n` : "";
+  const lcdSetup = usesLCD
+    ? `  lcd.begin(LCD_NB_COLUMNS, LCD_NB_ROWS);\n  setup_progressbar();\n`
+    : "";
+
+  const lcdGlobals = usesLCD
+    ? `
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+const int LCD_NB_ROWS    = 2;
+const int LCD_NB_COLUMNS = 16;
+`
+    : "";
+
+  const analogBlocks = blocks.filter((b) => b.port.startsWith("A"));
+  const usesButton = usesLCD && analogBlocks.length > 0;
+  const numInputs = analogBlocks.length;
+
+  const buttonGlobals = usesButton
+    ? `
+const int buttonPin = A0;
+int currentInput    = ${analogBlocks[0]?.port || "A1"};
+const int numInputs = ${numInputs};
+`
+    : "";
+
+  const buttonFunctions = usesButton
+    ? `
+int readButton() {
+  int v = analogRead(buttonPin);
+  if (v < 50)   return 0;
+  if (v < 250)  return 1;
+  if (v < 450)  return 2;
+  if (v < 650)  return 3;
+  if (v < 850)  return 4;
+  return -1;
+}
+
+void handleButtonPress() {
+  int button = readButton();
+  static unsigned long lastPressTime = 0;
+  unsigned long currentTime = millis();
+  if (currentTime - lastPressTime > 200) {
+    if (button == 0) currentInput = (currentInput < ${analogBlocks[0]?.port || "A1"} + numInputs - 1) ? currentInput + 1 : ${analogBlocks[0]?.port || "A1"};
+    if (button == 3) currentInput = (currentInput > ${analogBlocks[0]?.port || "A1"})                  ? currentInput - 1 : ${analogBlocks[0]?.port || "A1"} + numInputs - 1;
+    lastPressTime = currentTime;
+  }
+}
+`
+    : "";
+
+  const progressBarCode = usesLCD
+    ? `
+/* Progress bar custom characters */
+byte START_DIV_0_OF_1[8] = { B01111, B11000, B10000, B10000, B10000, B10000, B11000, B01111 };
+byte START_DIV_1_OF_1[8] = { B01111, B11000, B10011, B10111, B10111, B10011, B11000, B01111 };
+byte DIV_0_OF_2[8]       = { B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111 };
+byte DIV_1_OF_2[8]       = { B11111, B00000, B11000, B11000, B11000, B11000, B00000, B11111 };
+byte DIV_2_OF_2[8]       = { B11111, B00000, B11011, B11011, B11011, B11011, B00000, B11111 };
+byte END_DIV_0_OF_1[8]   = { B11110, B00011, B00001, B00001, B00001, B00001, B00011, B11110 };
+byte END_DIV_1_OF_1[8]   = { B11110, B00011, B11001, B11101, B11101, B11001, B00011, B11110 };
+
+void setup_progressbar() {
+  lcd.createChar(0, START_DIV_0_OF_1);
+  lcd.createChar(1, START_DIV_1_OF_1);
+  lcd.createChar(2, DIV_0_OF_2);
+  lcd.createChar(3, DIV_1_OF_2);
+  lcd.createChar(4, DIV_2_OF_2);
+  lcd.createChar(5, END_DIV_0_OF_1);
+  lcd.createChar(6, END_DIV_1_OF_1);
+}
+
+void draw_progressbar(byte pct, int sensorNum) {
+  lcd.setCursor(0, 0);
+  lcd.print("S"); lcd.print(sensorNum); lcd.print(": ");
+  lcd.print(pct); lcd.print(F(" %  "));
+  lcd.setCursor(0, 1);
+  byte nb_columns = map(pct, 0, 100, 0, LCD_NB_COLUMNS * 2 - 2);
+  for (byte i = 0; i < LCD_NB_COLUMNS; ++i) {
+    if (i == 0) {
+      lcd.write(nb_columns > 0 ? (nb_columns -= 1, 1) : (byte)0);
+    } else if (i == LCD_NB_COLUMNS - 1) {
+      lcd.write(nb_columns > 0 ? 6 : 5);
+    } else {
+      if      (nb_columns >= 2) { lcd.write(4); nb_columns -= 2; }
+      else if (nb_columns == 1) { lcd.write(3); nb_columns -= 1; }
+      else                        lcd.write(2);
+    }
+  }
+}
+`
+    : "";
+
+  function sensorRead(b, idx) {
+    if (b.sensor === "DF_robot") {
+      return (
+        `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
+` +
+        `  float x_${idx}    = S${idx}_k * (log(raw_${idx} - S${idx}_water_val) - log(S${idx}_air_val - S${idx}_water_val));
+` +
+        `  int   pct_${idx};
+` +
+        `  if      (raw_${idx} <= S${idx}_water_val)  pct_${idx} = 100;
+` +
+        `  else if (x_${idx}  <= S${idx}_wp)      pct_${idx} = 0;
+` +
+        `  else if (x_${idx}  >= S${idx}_fc)      pct_${idx} = 100;
+` +
+        `  else pct_${idx} = (int)((x_${idx} - S${idx}_wp) * 100.0 / (S${idx}_fc - S${idx}_wp));
+`
+      );
+    }
+    if (b.sensor === "Watermark") {
+      return (
+        `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
+` +
+        `  int   pct_${idx}  = raw_${idx};
+`
+      );
+    }
+    if (b.sensor === "Watermark_Temperature") {
+      return (
+        `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
+` +
+        `  int   pct_${idx}  = raw_${idx};
+`
+      );
+    }
+    return (
+      `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
+` +
+      `  int   pct_${idx}  = raw_${idx};
+`
+    );
+  }
+
+  function vizBlock(b, idx) {
+    switch (b.viz) {
+      case "none":
+        return `  /* no visualization for sensor ${idx} */`;
+      case "bar":
+        return `  draw_progressbar(percent, ${idx});`;
+      case "raw":
+        return (
+          `  Serial.print("Sensor ${idx} [${b.port}] raw: ");\n` +
+          `  Serial.println(sensorValue_${idx});`
+        );
+      case "state":
+        return (
+          `  if      (percent == 0)  Serial.println("Sensor ${idx} [${b.port}]: VERY DRY");\n` +
+          `  else if (percent < 50)  Serial.println("Sensor ${idx} [${b.port}]: DRY");\n` +
+          `  else                    Serial.println("Sensor ${idx} [${b.port}]: WET");`
+        );
+      case "transformed":
+        return (
+          `  Serial.print("Sensor ${idx} [${b.port}] TAW%: ");\n` +
+          `  Serial.println(percent);`
+        );
+      case "rate":
+        return (
+          `  static int prev_${idx} = 0;\n` +
+          `  int rate_${idx} = percent - prev_${idx};\n` +
+          `  prev_${idx} = percent;\n` +
+          `  Serial.print("Sensor ${idx} [${b.port}] rate: ");\n` +
+          `  Serial.println(rate_${idx});`
+        );
+      default:
+        return `  Serial.println(percent);`;
+    }
+  }
+
+  let loopBody = "";
+  if (usesButton) loopBody += `  handleButtonPress();\n\n`;
+  blocks.forEach((b, i) => {
+    const idx = i + 1;
+    loopBody += sensorRead(b, idx) + "\n";
+    loopBody += `  Serial.print("Analog value (${b.port}): ");\n`;
+    loopBody += `  Serial.println(sensorValue_${idx});\n\n`;
+    loopBody += vizBlock(b, idx) + "\n\n";
+  });
+
   return `/*
  * ════════════════════════════════════════════════
  *  Pillowtech Code Generator
@@ -606,25 +856,27 @@ ${surveySection} * ════════════════════�
  */
 
 #include <math.h>
-
+${lcdIncludes}
 #define BAUD_RATE 9600
 
+/* Module variables */
+int   percent;
+float x;
+${lcdGlobals}${buttonGlobals}
+/* Calibration constants */
 ${constants.trimEnd()}
-
+${progressBarCode}${buttonFunctions}
 void setup() {
   Serial.begin(BAUD_RATE);
-  Serial.println("Sketch ready.");
+${lcdSetup}  Serial.println("Sketch ready.");
 }
 
 void loop() {
 
-${loopReads}
-${loopViz}
-  delay(1000);
+${loopBody}  delay(1000);
 }
 `;
 }
-
 function downloadFile(content, filename) {
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);

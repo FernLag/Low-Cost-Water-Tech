@@ -1,11 +1,11 @@
 const SENSOR_TYPES = {
   DF_robot: {
     label: "DF_robot",
-    tip: "Direct ADC reading 0-1023",
+    tip: "Direct sensor reading",
     outputs: [
       {
         value: "Raw value",
-        tip: "Direct ADC reading 0-1023",
+        tip: "Direct sensor reading",
       },
       {
         value: "Transformed Raw Value",
@@ -36,7 +36,7 @@ const SENSOR_TYPES = {
       {
         name: "air_val",
         display: "Air value",
-        label: "Air value — raw ADC reading in open air",
+        label: "Air value: raw reading in open air",
         value: "0",
         min: "0",
         max: "1023",
@@ -44,7 +44,7 @@ const SENSOR_TYPES = {
       {
         name: "water_val",
         display: "Water value",
-        label: "Water value — raw ADC reading submerged in water",
+        label: "Water value: raw reading submerged in water",
         value: "0",
         min: "0",
         max: "1023",
@@ -52,26 +52,26 @@ const SENSOR_TYPES = {
       {
         name: "fc",
         display: "Field Capacity",
-        label: "Field capacity — volumetric water content at FC",
+        label: "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
         value: "0",
         min: "0",
-        max: "100",
+        max: "1023",
       },
       {
         name: "wp",
         display: "Wilting point",
-        label: "Wilting point — volumetric water content at WP",
+        label: "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
         value: "0",
         min: "0",
-        max: "100",
+        max: "1023",
       },
       {
         name: "k",
         display: "k",
-        label: "k — calibration scaling factor",
+        label: "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
         value: "0",
         min: "0",
-        max: "100",
+        max: "1023",
       },
     ],
   },
@@ -85,7 +85,7 @@ const SENSOR_TYPES = {
       },
       {
         value: "Raw value",
-        tip: "na",
+        tip: "N/A",
       },
       {
         value: "Transformed raw value",
@@ -100,18 +100,18 @@ const SENSOR_TYPES = {
       {
         name: "air_val",
         display: "Air value",
-        label: "Air value — raw ADC reading in open air",
+        label: "Air value: raw reading in open air",
         value: "0",
         min: "0",
-        max: "100",
+        max: "1023",
       },
       {
         name: "water_val",
         display: "Water value",
-        label: "Water value — raw ADC reading submerged in water",
+        label: "Water value: raw reading submerged in water",
         value: "0",
         min: "0",
-        max: "100",
+        max: "1023",
       },
     ],
   },
@@ -132,7 +132,8 @@ const SENSOR_TYPES = {
         tip: "",
       },
     ],
-    params: [],
+    params: [
+    ],
   },
 };
 
@@ -189,27 +190,22 @@ const VIZ_OPTIONS = [
   {
     value: "bar",
     label: "Loading bar",
-    tip: "",
+    tip: "Displays a loading bar that changes based on water content.",
   },
   {
     value: "raw",
     label: "Raw value",
-    tip: "",
+    tip: "Displays the raw sensor value",
   },
   {
     value: "state",
     label: "State: very dry / dry / wet",
-    tip: "",
+    tip: "Displays the general state at which soil seems to be",
   },
   {
     value: "transformed",
     label: "Transformed Raw Value 0-100",
-    tip: "",
-  },
-  {
-    value: "rate",
-    label: "Rate of change (future)",
-    tip: "",
+    tip: "A more concise version of the raw sensor value",
   },
 ];
 
@@ -758,7 +754,7 @@ void draw_progressbar(byte pct, int sensorNum) {
     : "";
 
   function sensorRead(b, idx) {
-    if (b.sensor === "DF_robot") {
+        if (b.sensor === "DF_robot") {
       return (
         `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
 ` +
@@ -776,7 +772,7 @@ void draw_progressbar(byte pct, int sensorNum) {
 `
       );
     }
-    if (b.sensor === "Watermark") {
+        if (b.sensor === "Watermark") {
       return (
         `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
 ` +
@@ -784,7 +780,7 @@ void draw_progressbar(byte pct, int sensorNum) {
 `
       );
     }
-    if (b.sensor === "Watermark_Temperature") {
+        if (b.sensor === "Watermark_Temperature") {
       return (
         `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
 ` +
@@ -792,7 +788,7 @@ void draw_progressbar(byte pct, int sensorNum) {
 `
       );
     }
-    return (
+        return (
       `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);
 ` +
       `  int   pct_${idx}  = raw_${idx};

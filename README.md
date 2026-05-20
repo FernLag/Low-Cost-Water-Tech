@@ -4,7 +4,8 @@ Our goal is to focus on developing and fostering the adoption of Do-It-Yourself 
 
 Made with: Python, JavaScript, HTML/CSS
 
-************************\_\_\_\_************************
+---
+
 **FOR DEVELOPER**
 
 Have the master spreadsheet in the same directory as the rest of the files. In the terminal

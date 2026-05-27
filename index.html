@@ -19,25 +19,20 @@
           Fields marked <span class="req">*</span> are required
         </span>
       </div>
-
       <div id="sensors-list"></div>
       <div id="port-warning" class="port-warning"></div>
-
       <button class="add-block-btn" onclick="addBlock()">
         + Add sensor block
       </button>
-
       <button class="gen-btn" onclick="handleGenerate()">
         Generate + download .ino
       </button>
-
       <div class="success-banner" id="success-banner">
         <span>&#10003;</span>
         <span>
           <strong id="success-filename"></strong> Downloaded successfully.
         </span>
       </div>
-
       <div class="preview-wrap" id="preview-wrap">
         <div class="preview-head">
           <span>Code preview</span>
@@ -57,12 +52,30 @@
         </div>
         <div class="survey-modal-body" id="survey-body"></div>
         <div class="survey-modal-foot">
-          <button class="survey-cancel-btn" onclick="closeSurvey()">
-            Cancel
-          </button>
-          <button class="survey-confirm-btn" onclick="confirmSurvey()">
-            Confirm + download
-          </button>
+          <label class="consent-label">
+            <input
+              type="checkbox"
+              id="consent-checkbox"
+              onchange="
+                document.getElementById('confirm-btn').disabled = !this.checked
+              "
+            />
+            I agree to share my information and understand it will be used for
+            research purposes.
+          </label>
+          <div class="survey-foot-btns">
+            <button class="survey-cancel-btn" onclick="closeSurvey()">
+              Cancel
+            </button>
+            <button
+              class="survey-confirm-btn"
+              id="confirm-btn"
+              onclick="confirmSurvey()"
+              disabled
+            >
+              Confirm + download
+            </button>
+          </div>
         </div>
       </div>
     </div>

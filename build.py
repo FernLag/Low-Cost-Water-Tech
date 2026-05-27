@@ -42,9 +42,9 @@ for row in sensors_raw:
         current_key = safe_js_key(key)
         if current_key not in sensor_meta:
             sensor_meta[current_key] = {
-                "label":    key,
-                "tip":      out_tip,
-                "raw_key":  key,
+                "label":   key,
+                "tip":     out_tip,
+                "raw_key": key,
             }
             active_keys.append(current_key)
 
@@ -66,13 +66,23 @@ params_raw = sheet_rows("params")
 params_map = {}
 
 for row in params_raw:
-    key          = safe_js_key(row[0])
-    p_name       = row[1]
-    p_display    = row[2]
-    p_label      = row[3]
-    p_min        = row[4]
-    p_max        = row[5]
-    p_val        = row[6] if len(row) > 6 else "0"
+    key       = safe_js_key(row[0])
+    p_name    = row[1]
+
+    if len(row) >= 8 and row[2] and not str(row[2]).replace(".", "").replace("-", "").lstrip().isdigit():
+        p_display = row[2]
+        p_label   = row[3]
+        p_min     = row[4]
+        p_max     = row[5]
+        p_val     = row[6] if len(row) > 6 else "0"
+        p_units   = row[7] if len(row) > 7 else ""
+    else:
+        p_display = ""
+        p_label   = row[2]
+        p_min     = row[3]
+        p_max     = row[4]
+        p_val     = row[5] if len(row) > 5 else "0"
+        p_units   = row[6] if len(row) > 6 else ""
 
     if not key or not p_name:
         continue
@@ -85,6 +95,7 @@ for row in params_raw:
         "min":     p_min,
         "max":     p_max,
         "value":   str(p_val) if p_val != "" else "0",
+        "units":   str(p_units) if p_units else "",
     })
 
 viz_raw      = sheet_rows("viz_options")
@@ -124,6 +135,7 @@ def build_sensor_types():
             lines.append(f'        value: "{jstr(p["value"])}",')
             lines.append(f'        min: "{jstr(p["min"])}",')
             lines.append(f'        max: "{jstr(p["max"])}",')
+            lines.append(f'        units: "{jstr(p["units"])}",')
             lines.append(f'      }},')
         lines.append('    ],')
         lines.append('  },')
@@ -179,74 +191,6 @@ def build_survey_questions():
     return '\n'.join(lines)
 
 
-def build_sensor_read():
-    """Build the sensorRead function body with one if/else branch per sensor."""
-    cases = []
-    for key in active_keys:
-        params  = params_map.get(key, [])
-        outputs = outputs_map.get(key, [])
-
-        if not params:
-            cases.append(
-                f'    if (b.sensor === "{key}") {{\n'
-                f'      return (\n'
-                f'        `  int   raw_${{idx}}  = analogRead(SENSOR_${{idx}}_PIN);\\n` +\n'
-                f'        `  int   pct_${{idx}}  = raw_${{idx}};\\n`\n'
-                f'      );\n'
-                f'    }}'
-            )
-        else:
-            param_names = [p["name"] for p in params]
-            read_lines = [
-                f'`  int   raw_${{idx}}  = analogRead(SENSOR_${{idx}}_PIN);\\n` +'
-            ]
-
-            has_wp = any(p["name"] == "wp" for p in params)
-            has_fc = any(p["name"] == "fc" for p in params)
-            has_water = any(p["name"] == "water_val" for p in params)
-            has_air   = any(p["name"] == "air_val" for p in params)
-            has_k     = any(p["name"] == "k" for p in params)
-
-            if has_k and has_water and has_air:
-                read_lines += [
-                    f'`  float x_${{idx}}    = S${{idx}}_k * (log(raw_${{idx}} - S${{idx}}_water_val) - log(S${{idx}}_air_val - S${{idx}}_water_val));\\n` +',
-                    f'`  int   pct_${{idx}};\\n` +',
-                    f'`  if      (raw_${{idx}} <= S${{idx}}_water_val)  pct_${{idx}} = 100;\\n` +',
-                ]
-                if has_wp:
-                    read_lines.append(f'`  else if (x_${{idx}}  <= S${{idx}}_wp)      pct_${{idx}} = 0;\\n` +')
-                if has_fc:
-                    read_lines.append(f'`  else if (x_${{idx}}  >= S${{idx}}_fc)      pct_${{idx}} = 100;\\n` +')
-                read_lines.append(
-                    f'`  else pct_${{idx}} = (int)((x_${{idx}} - S${{idx}}_wp) * 100.0 / (S${{idx}}_fc - S${{idx}}_wp));\\n`'
-                )
-            else:
-                read_lines.append(f'`  int   pct_${{idx}}  = raw_${{idx}};\\n`')
-
-            body = '\n        '.join(read_lines)
-            cases.append(
-                f'    if (b.sensor === "{key}") {{\n'
-                f'      return (\n'
-                f'        {body}\n'
-                f'      );\n'
-                f'    }}'
-            )
-
-    fallback = (
-        '    return (\n'
-        '      `  int   raw_${idx}  = analogRead(SENSOR_${idx}_PIN);\\n` +\n'
-        '      `  int   pct_${idx}  = raw_${idx};\\n`\n'
-        '    );'
-    )
-    all_cases = '\n    '.join(cases)
-    return (
-        'function sensorRead(b, idx) {\n'
-        f'    {all_cases}\n'
-        f'    {fallback}\n'
-        '  }'
-    )
-
-
 with open(MAIN_JS_FILE, "r", encoding="utf-8") as f:
     js = f.read()
 
@@ -260,8 +204,6 @@ js = re.sub(r'const VIZ_OPTIONS = \[.*?\];',
             build_viz_options(), js, flags=re.DOTALL)
 js = re.sub(r'const SURVEY_QUESTIONS = \[.*?\];',
             build_survey_questions(), js, flags=re.DOTALL)
-js = re.sub(r'function sensorRead\(b, idx\) \{.*?\n  \}',
-            build_sensor_read(), js, flags=re.DOTALL)
 
 with open(MAIN_JS_FILE, "w", encoding="utf-8") as f:
     f.write(js)

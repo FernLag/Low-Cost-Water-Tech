@@ -1,3 +1,24 @@
+"""
+build.py — regenerates main.js config blocks from sensor_configuration.xlsx
+
+This script rewrites these blocks in main.js based on the Excel file:
+  - SENSOR_TYPES     ← sheet "sensors" + "params"
+  - PORT_TIPS, PORTS ← sheet "ports"
+  - VIZ_OPTIONS      ← sheet "viz_options"
+  - SURVEY_QUESTIONS ← sheet "survey_questions"
+
+It does NOT touch the TEMPLATES block — that contains the actual Arduino
+code logic and must be edited by hand in main.js.
+
+IMPORTANT: For Excel edits to flow through to generated code, the output names
+in your "sensors" sheet (e.g. "TAW", "Raw value") must match keys in
+TEMPLATES.outputs (case-insensitive). If you add a new output in Excel, add a
+matching entry in TEMPLATES.outputs in main.js.
+
+Same rule applies for new sensor types (TEMPLATES.sensors) and new viz
+options (TEMPLATES.viz).
+"""
+
 import os
 import re
 from openpyxl import load_workbook
@@ -68,7 +89,10 @@ params_map = {}
 for row in params_raw:
     key       = safe_js_key(row[0])
     p_name    = row[1]
-
+    # Support both 7-col (with display_name) and 6-col (without) structures
+    # col 0: sensor_key, 1: param_name, then either:
+    # 7-col: 2=display, 3=label, 4=min, 5=max, 6=default, 7=units
+    # 6-col: 2=label,   3=min,   4=max, 5=default, 6=units
     if len(row) >= 8 and row[2] and not str(row[2]).replace(".", "").replace("-", "").lstrip().isdigit():
         p_display = row[2]
         p_label   = row[3]

@@ -3,33 +3,15 @@ const SENSOR_TYPES = {
     label: "DF_robot",
     tip: "Direct sensor reading",
     outputs: [
-      {
-        value: "Raw value",
-        tip: "Direct sensor reading",
-      },
-      {
-        value: "Transformed Raw Value",
-        tip: "",
-      },
-      {
-        value: "TAW",
-        tip: "",
-      },
-      {
-        value: "Rate of change",
-        tip: "",
-      },
-      {
-        value: "Wetting front",
-        tip: "",
-      },
-      {
-        value: "1-2-3 point calibration",
-        tip: "",
-      },
+      { value: "Raw value", tip: "Direct sensor reading" },
+      { value: "Transformed Raw Value", tip: "Mapped to 0-100 scale" },
+      { value: "TAW", tip: "Total Available Water" },
+      { value: "Rate of change", tip: "Change between readings" },
+      { value: "Wetting front", tip: "" },
+      { value: "1-2-3 point calibration", tip: "" },
       {
         value: "Threshold (very dry/dry/wet)",
-        tip: "",
+        tip: "Three-state classification",
       },
     ],
     params: [
@@ -40,7 +22,7 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "ADC",
       },
       {
         name: "water_val",
@@ -49,7 +31,7 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "ADC",
       },
       {
         name: "fc",
@@ -59,17 +41,17 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "%vol",
       },
       {
         name: "wp",
         display: "Wilting point",
         label:
-          "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
+          "Wilting point: When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "%vol",
       },
       {
         name: "k",
@@ -79,30 +61,16 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "m³/m³",
       },
     ],
   },
   Watermark: {
     label: "Watermark",
-    tip: "",
+    tip: "Watermark soil moisture sensor",
     outputs: [
-      {
-        value: "Transformed Raw value",
-        tip: "",
-      },
-      {
-        value: "Raw value",
-        tip: "N/A",
-      },
-      {
-        value: "Transformed raw value",
-        tip: "",
-      },
-      {
-        value: "Raw values",
-        tip: "",
-      },
+      { value: "Raw value", tip: "Direct ADC reading" },
+      { value: "Transformed Raw Value", tip: "Mapped to 0-100 scale" },
     ],
     params: [
       {
@@ -112,7 +80,7 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "ADC",
       },
       {
         name: "water_val",
@@ -121,26 +89,17 @@ const SENSOR_TYPES = {
         value: "0",
         min: "0",
         max: "1023",
-        units: "Pa",
+        units: "ADC",
       },
     ],
   },
   Watermark_Temperature: {
     label: "Watermark_Temperature",
-    tip: "",
+    tip: "Watermark with temperature compensation",
     outputs: [
-      {
-        value: "Transformed raw value",
-        tip: "",
-      },
-      {
-        value: "Temperature",
-        tip: "",
-      },
-      {
-        value: "Tension",
-        tip: "",
-      },
+      { value: "Raw value", tip: "Direct ADC reading" },
+      { value: "Temperature", tip: "Temperature reading (TODO)" },
+      { value: "Tension", tip: "Soil tension (TODO)" },
     ],
     params: [],
   },
@@ -191,30 +150,22 @@ const PORTS = [
 ];
 
 const VIZ_OPTIONS = [
+  { value: "none", label: "No visualization", tip: "No output." },
+  { value: "bar", label: "Loading bar (LCD)", tip: "16x2 LCD progress bar." },
   {
-    value: "none",
-    label: "No visualization",
-    tip: "No Serial output.",
+    value: "raw_lcd",
+    label: "Raw value (LCD)",
+    tip: "Displays the raw ADC reading on the LCD screen",
   },
   {
-    value: "bar",
-    label: "Loading bar",
-    tip: "Displays a loading bar that changes based on water content.",
+    value: "state_lcd",
+    label: "State: very dry / dry / wet (LCD)",
+    tip: "Three-state classification on the LCD screen",
   },
   {
-    value: "raw",
-    label: "Raw value",
-    tip: "Displays the raw sensor value",
-  },
-  {
-    value: "state",
-    label: "State: very dry / dry / wet",
-    tip: "Displays the general state at which soil seems to be",
-  },
-  {
-    value: "transformed",
-    label: "Transformed Raw Value 0-100",
-    tip: "A more concise version of the raw sensor value",
+    value: "transformed_lcd",
+    label: "Transformed value (LCD)",
+    tip: "Displays the percent on the LCD screen",
   },
 ];
 
@@ -255,6 +206,327 @@ const SURVEY_QUESTIONS = [
     placeholder: "Optional...",
   },
 ];
+
+const TEMPLATES = {
+  sensors: {
+    DF_robot: {
+      constants: `/* Sensor {idx}: DF_robot on port {port} */
+const int   Vwat_{idx} = {water_val};         /* sensor value in water */
+const float b_{idx}    = log({air_val} - {water_val});  /* b = ln(Vair - Vwat) */
+const float a_{idx}    = -1.0 / {k};          /* a = -1/k */
+float WP_{idx}         = {wp};                 /* wilting point (%vol) */
+float FC_{idx}         = {fc};                 /* field capacity (%vol) */
+`,
+      read: `  int sensorValue_{idx} = analogRead({readPin});
+  x = a_{idx} * (log(sensorValue_{idx} - Vwat_{idx}) - b_{idx});`,
+    },
+
+    Watermark: {
+      constants: `/* Sensor {idx}: Watermark on port {port} */
+const int Vair_{idx} = {air_val};            /* sensor value in air */
+const int Vwat_{idx} = {water_val};          /* sensor value in water */
+`,
+      read: `  int sensorValue_{idx} = analogRead({readPin});`,
+    },
+
+    Watermark_Temperature: {
+      constants: `/* Sensor {idx}: Watermark_Temperature on port {port} */
+`,
+      read: `  int sensorValue_{idx} = analogRead({readPin});`,
+    },
+  },
+
+  outputs: {
+    "Raw value": `  percent = sensorValue_{idx};`,
+
+    "Transformed Raw Value": `  percent = (int)constrain((sensorValue_{idx} - Vwat_{idx}) * 100.0 / (Vair_{idx} - Vwat_{idx}), 0, 100);`,
+
+    TAW: `  if (sensorValue_{idx} <= Vwat_{idx}) {
+    percent = 100;
+  } else if (x <= WP_{idx}) {
+    percent = 0;
+  } else if (x >= FC_{idx}) {
+    percent = 100;
+  } else {
+    percent = (int)((x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx}));
+  }`,
+
+    "Threshold (very dry/dry/wet)": `  if (sensorValue_{idx} <= Vwat_{idx}) {
+    percent = 100;
+  } else if (x <= WP_{idx}) {
+    percent = 0;
+  } else if (x >= FC_{idx}) {
+    percent = 100;
+  } else {
+    percent = (int)((x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx}));
+  }`,
+
+    "Rate of change": `  static int prev_{idx} = 0;
+  percent = sensorValue_{idx} - prev_{idx};
+  prev_{idx} = sensorValue_{idx};`,
+
+    "Wetting front": `  percent = sensorValue_{idx};  /* TODO: implement wetting front detection */`,
+
+    "1-2-3 point calibration": `  percent = sensorValue_{idx};  /* TODO: implement 1-2-3 point calibration */`,
+
+    Temperature: `  percent = sensorValue_{idx};  /* TODO: convert ADC to temperature */`,
+
+    Tension: `  percent = sensorValue_{idx};  /* TODO: convert ADC to soil tension */`,
+  },
+
+  viz: {
+    none: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  /* no visualization for sensor {idx} */`,
+    },
+
+    bar: {
+      includes: `#include <LiquidCrystal.h>`,
+      globals: `LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+const int LCD_NB_ROWS    = 2;
+const int LCD_NB_COLUMNS = 16;
+
+/* Progress bar custom characters */
+byte START_DIV_0_OF_1[8] = { B01111, B11000, B10000, B10000, B10000, B10000, B11000, B01111 };
+byte START_DIV_1_OF_1[8] = { B01111, B11000, B10011, B10111, B10111, B10011, B11000, B01111 };
+byte DIV_0_OF_2[8]       = { B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111 };
+byte DIV_1_OF_2[8]       = { B11111, B00000, B11000, B11000, B11000, B11000, B00000, B11111 };
+byte DIV_2_OF_2[8]       = { B11111, B00000, B11011, B11011, B11011, B11011, B00000, B11111 };
+byte END_DIV_0_OF_1[8]   = { B11110, B00011, B00001, B00001, B00001, B00001, B00011, B11110 };
+byte END_DIV_1_OF_1[8]   = { B11110, B00011, B11001, B11101, B11101, B11001, B00011, B11110 };
+
+void setup_progressbar() {
+  lcd.createChar(0, START_DIV_0_OF_1);
+  lcd.createChar(1, START_DIV_1_OF_1);
+  lcd.createChar(2, DIV_0_OF_2);
+  lcd.createChar(3, DIV_1_OF_2);
+  lcd.createChar(4, DIV_2_OF_2);
+  lcd.createChar(5, END_DIV_0_OF_1);
+  lcd.createChar(6, END_DIV_1_OF_1);
+}
+
+void draw_progressbar(byte pct, int analogNum) {
+  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(analogNum); lcd.print(": ");
+  lcd.print(pct); lcd.print(F(" %  "));
+  lcd.setCursor(0, 1);
+  byte nb_columns = map(pct, 0, 100, 0, LCD_NB_COLUMNS * 2 - 2);
+  for (byte i = 0; i < LCD_NB_COLUMNS; ++i) {
+    if (i == 0) {
+      lcd.write(nb_columns > 0 ? (nb_columns -= 1, 1) : (byte)0);
+    } else if (i == LCD_NB_COLUMNS - 1) {
+      lcd.write(nb_columns > 0 ? 6 : 5);
+    } else {
+      if      (nb_columns >= 2) { lcd.write(4); nb_columns -= 2; }
+      else if (nb_columns == 1) { lcd.write(3); nb_columns -= 1; }
+      else                        lcd.write(2);
+    }
+  }
+}`,
+      setup: `  lcd.begin(LCD_NB_COLUMNS, LCD_NB_ROWS);
+  setup_progressbar();`,
+      loop: `  draw_progressbar((byte)constrain(percent, 0, 100), currentInput - A1 + 1);`,
+    },
+
+    raw_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(currentInput - A1 + 1); lcd.print(": ");
+  lcd.print(sensorValue_{idx}); lcd.print(F("      "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
+
+    state_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(currentInput - A1 + 1); lcd.print(": ");
+  if      (percent == 0)  lcd.print(F("VERY DRY    "));
+  else if (percent < 50)  lcd.print(F("DRY         "));
+  else                    lcd.print(F("WET         "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
+
+    transformed_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(currentInput - A1 + 1); lcd.print(": ");
+  lcd.print(percent); lcd.print(F(" %       "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
+  },
+
+  buttonNav: {
+    globals: `const int buttonPin = A0;
+int currentInput    = A1;
+const int numInputs = 5;  /* A1 to A5 */
+
+int readButton() {
+  int v = analogRead(buttonPin);
+  if (v < 50)   return 0;
+  if (v < 250)  return 1;
+  if (v < 450)  return 2;
+  if (v < 650)  return 3;
+  if (v < 850)  return 4;
+  return -1;
+}
+
+void handleButtonPress() {
+  int button = readButton();
+  static unsigned long lastPressTime = 0;
+  unsigned long currentTime = millis();
+  if (currentTime - lastPressTime > 200) {
+    if (button == 0) currentInput = (currentInput < A1 + numInputs - 1) ? currentInput + 1 : A1;
+    if (button == 3) currentInput = (currentInput > A1) ? currentInput - 1 : A1 + numInputs - 1;
+    lastPressTime = currentTime;
+  }
+}`,
+    loopHook: `  handleButtonPress();`,
+  },
+};
+
+function render(template, vars) {
+  if (!template) return "";
+  return template.replace(/\{(\w+)\}/g, (_, key) =>
+    vars[key] !== undefined ? vars[key] : "0",
+  );
+}
+
+function lookupTemplate(map, name) {
+  if (!name || !map) return null;
+  if (map[name]) return map[name];
+  const lower = name.toLowerCase().trim();
+  for (const [k, v] of Object.entries(map)) {
+    if (k.toLowerCase().trim() === lower) return v;
+  }
+  return null;
+}
+
+function buildIno(blocks, surveyAnswers = {}) {
+  const now = new Date().toISOString().slice(0, 10);
+  const numBlocks = blocks.length;
+
+  const analogBlocks = blocks.filter((b) => b.port.startsWith("A"));
+  const usesButton = analogBlocks.length === 1;
+
+  const includes = new Set(["#include <math.h>"]);
+  let globals = "";
+  let setupBody = "";
+  let constants = "";
+  let loopBody = "";
+
+  const lcdTpl = TEMPLATES.viz.bar;
+  if (lcdTpl.includes) includes.add(lcdTpl.includes);
+  if (lcdTpl.globals) globals += lcdTpl.globals + "\n";
+  if (lcdTpl.setup) setupBody += lcdTpl.setup + "\n";
+
+  globals += TEMPLATES.buttonNav.globals + "\n";
+  loopBody += TEMPLATES.buttonNav.loopHook + "\n\n";
+
+  blocks.forEach((b, i) => {
+    const idx = i + 1;
+    const readPin = usesButton ? "currentInput" : b.port;
+
+    const vars = { idx, port: b.port, readPin };
+    b.params.forEach((p) => {
+      vars[p.name] =
+        p.value !== "" && p.value !== null && p.value !== undefined
+          ? p.value
+          : "0";
+    });
+
+    const sensorTpl = lookupTemplate(TEMPLATES.sensors, b.sensor);
+    if (sensorTpl) {
+      constants += render(sensorTpl.constants, vars) + "\n";
+      loopBody += render(sensorTpl.read, vars) + "\n";
+    } else {
+      loopBody += `  int sensorValue_${idx} = analogRead(${readPin});\n`;
+    }
+
+    const outputTpl = lookupTemplate(TEMPLATES.outputs, b.output);
+    if (outputTpl) {
+      loopBody += render(outputTpl, vars) + "\n";
+    } else {
+      loopBody += `  percent = sensorValue_${idx};\n`;
+    }
+
+    if (usesButton) {
+      loopBody += `  Serial.print("Analog value (A");\n`;
+      loopBody += `  Serial.print(currentInput - A1 + 1);\n`;
+      loopBody += `  Serial.print("): ");\n`;
+      loopBody += `  Serial.println(sensorValue_${idx});\n`;
+    } else {
+      loopBody += `  Serial.print("Sensor ${idx} (${b.port}): ");\n`;
+      loopBody += `  Serial.println(sensorValue_${idx});\n`;
+    }
+
+    const vizTpl = lookupTemplate(TEMPLATES.viz, b.viz) || TEMPLATES.viz.none;
+    loopBody += render(vizTpl.loop, vars) + "\n\n";
+  });
+
+  const header = blocks
+    .map(
+      (b, i) =>
+        ` *   Sensor ${i + 1}: ${b.sensor} on ${b.port} → ${b.output} [${b.viz}]`,
+    )
+    .join("\n");
+
+  const surveyLines = SURVEY_QUESTIONS.filter(
+    (q) => q.key !== "filename" && surveyAnswers[q.key],
+  )
+    .map((q) => ` *   ${q.label.padEnd(24)}: ${surveyAnswers[q.key]}`)
+    .join("\n");
+
+  const surveySection = surveyLines
+    ? ` * ────────────────────────────────────────────────\n${surveyLines}\n`
+    : "";
+
+  const includeBlock = [...includes].join("\n");
+
+  return `/*
+ * ════════════════════════════════════════════════
+ *  Pillowtech Code Generator
+ *  Generated : ${now}
+ *  Sensors   : ${numBlocks}
+ * ────────────────────────────────────────────────
+${header}
+${surveySection} * ════════════════════════════════════════════════
+ */
+
+${includeBlock}
+
+#define BAUD_RATE 9600
+
+/* Module variables */
+int   percent;
+float x;
+
+${globals.trimEnd()}
+
+/* Calibration constants */
+${constants.trimEnd()}
+
+void setup() {
+  Serial.begin(BAUD_RATE);
+${setupBody}  Serial.println("Sketch ready.");
+}
+
+void loop() {
+
+${loopBody}  delay(1000);
+}
+`;
+}
 
 function initTooltips() {
   const popup = document.createElement("div");
@@ -557,15 +829,31 @@ function updateParamRemoveBtns(bid) {
 
 function checkDuplicatePorts() {
   const portMap = {};
+  const ports = [];
   document.querySelectorAll("[id^='port-sel-']").forEach((el) => {
     portMap[el.value] = (portMap[el.value] || 0) + 1;
+    ports.push(el.value);
   });
   const dupes = Object.entries(portMap)
     .filter(([, c]) => c > 1)
     .map(([p]) => p);
-  const warn = document.getElementById("port-warning");
+  const analogCount = ports.filter((p) => /^A[1-5]$/.test(p)).length;
+
+  const messages = [];
   if (dupes.length) {
-    warn.textContent = `Warning: port${dupes.length > 1 ? "s" : ""} ${dupes.join(", ")} used in more than one block. Each port must be unique.`;
+    messages.push(
+      `Port${dupes.length > 1 ? "s" : ""} ${dupes.join(", ")} used in more than one block. Each port must be unique.`,
+    );
+  }
+  if (analogCount >= 5) {
+    messages.push(
+      `All 5 analog ports (A1–A5) are in use. To add more sensors, use a digital port (D1–D14). The Arduino only has 5 analog input pins available for sensors.`,
+    );
+  }
+
+  const warn = document.getElementById("port-warning");
+  if (messages.length) {
+    warn.innerHTML = messages.map((m) => `⚠ ${m}`).join("<br>");
     warn.classList.add("show");
   } else {
     warn.classList.remove("show");
@@ -573,7 +861,6 @@ function checkDuplicatePorts() {
 }
 
 function validate() {
-  let valid = true;
   const portMap = {};
   document.querySelectorAll("[id^='port-sel-']").forEach((el) => {
     portMap[el.value] = (portMap[el.value] || []).concat(el.id);
@@ -582,270 +869,15 @@ function validate() {
     alert("Duplicate ports detected. Each block must use a unique port.");
     return false;
   }
+  let valid = true;
   document.querySelectorAll("input[required]").forEach((el) => {
     if (el.style.display === "none") return;
+    if (el.offsetParent === null) return;
     const empty = !el.value || el.value.trim() === "";
     el.classList.toggle("error", empty);
     if (empty) valid = false;
   });
   return valid;
-}
-
-function buildIno(blocks, surveyAnswers = {}) {
-  const now = new Date().toISOString().slice(0, 10);
-  const numBlocks = blocks.length;
-
-  function pval(b, name, fallback = "0") {
-    const p = b.params.find((p) => p.name === name);
-    return p && p.value !== "" ? p.value : fallback;
-  }
-
-  const header = blocks
-    .map(
-      (b, i) =>
-        ` *   Sensor ${i + 1}: ${b.sensor} on ${b.port} → ${b.output} [${b.viz}]`,
-    )
-    .join("\n");
-
-  const surveyLines = SURVEY_QUESTIONS.filter(
-    (q) => q.key !== "filename" && surveyAnswers[q.key],
-  )
-    .map((q) => ` *   ${q.label.padEnd(24)}: ${surveyAnswers[q.key]}`)
-    .join("\n");
-
-  const surveySection = surveyLines
-    ? ` * ────────────────────────────────────────────────\n${surveyLines}\n`
-    : "";
-
-  let constants = "";
-  blocks.forEach((b, i) => {
-    const idx = i + 1;
-    constants += `/* Sensor ${idx}: ${b.sensor} on port ${b.port} */\n`;
-    if (b.sensor === "DF_robot") {
-      const Vwat = pval(b, "water_val");
-      const Vair = pval(b, "air_val");
-      const k = pval(b, "k", "1");
-      const WP = pval(b, "wp");
-      const FC = pval(b, "fc");
-      constants += `const int   Vwat_${idx} = ${Vwat};         /* sensor value in water */\n`;
-      constants += `const float b_${idx}    = log(${Vair} - ${Vwat});  /* b = ln(Vair-Vwat) */\n`;
-      constants += `const float a_${idx}    = -1.0 / ${k};     /* a = -1/k */\n`;
-      constants += `float WP_${idx}         = ${WP};            /* wilting point (%vol) */\n`;
-      constants += `float FC_${idx}         = ${FC};            /* field capacity (%vol) */\n`;
-    } else {
-      b.params.forEach((p) => {
-        const val = p.value !== "" ? p.value : "0";
-        constants += `const float ${(p.name + "_" + idx).padEnd(20)} = ${val};\n`;
-      });
-    }
-    constants += "\n";
-  });
-
-  const usesLCD = blocks.some((b) => b.viz === "bar");
-  const lcdIncludes = usesLCD ? `#include <LiquidCrystal.h>\n` : "";
-  const lcdSetup = usesLCD
-    ? `  lcd.begin(LCD_NB_COLUMNS, LCD_NB_ROWS);\n  setup_progressbar();\n`
-    : "";
-  const lcdGlobals = usesLCD
-    ? `
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-const int LCD_NB_ROWS    = 2;
-const int LCD_NB_COLUMNS = 16;
-`
-    : "";
-
-  const analogBlocks = blocks.filter((b) => b.port.startsWith("A"));
-  const usesButton = usesLCD && analogBlocks.length > 0;
-  const firstAnalog = analogBlocks[0]?.port || "A1";
-
-  const buttonGlobals = usesButton
-    ? `
-const int buttonPin = A0;
-int currentInput    = A1;
-const int numInputs = 5;  /* A1 to A5 */
-`
-    : "";
-
-  const buttonFunctions = usesButton
-    ? `
-int readButton() {
-  int v = analogRead(buttonPin);
-  if (v < 50)   return 0;
-  if (v < 250)  return 1;
-  if (v < 450)  return 2;
-  if (v < 650)  return 3;
-  if (v < 850)  return 4;
-  return -1;
-}
-
-void handleButtonPress() {
-  int button = readButton();
-  static unsigned long lastPressTime = 0;
-  unsigned long currentTime = millis();
-  if (currentTime - lastPressTime > 200) {
-    if (button == 0) currentInput = (currentInput < A1 + numInputs - 1) ? currentInput + 1 : A1;
-    if (button == 3) currentInput = (currentInput > A1) ? currentInput - 1 : A1 + numInputs - 1;
-    lastPressTime = currentTime;
-  }
-}
-`
-    : "";
-
-  const progressBarCode = usesLCD
-    ? `
-/* Progress bar custom characters */
-byte START_DIV_0_OF_1[8] = { B01111, B11000, B10000, B10000, B10000, B10000, B11000, B01111 };
-byte START_DIV_1_OF_1[8] = { B01111, B11000, B10011, B10111, B10111, B10011, B11000, B01111 };
-byte DIV_0_OF_2[8]       = { B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111 };
-byte DIV_1_OF_2[8]       = { B11111, B00000, B11000, B11000, B11000, B11000, B00000, B11111 };
-byte DIV_2_OF_2[8]       = { B11111, B00000, B11011, B11011, B11011, B11011, B00000, B11111 };
-byte END_DIV_0_OF_1[8]   = { B11110, B00011, B00001, B00001, B00001, B00001, B00011, B11110 };
-byte END_DIV_1_OF_1[8]   = { B11110, B00011, B11001, B11101, B11101, B11001, B00011, B11110 };
-
-void setup_progressbar() {
-  lcd.createChar(0, START_DIV_0_OF_1);
-  lcd.createChar(1, START_DIV_1_OF_1);
-  lcd.createChar(2, DIV_0_OF_2);
-  lcd.createChar(3, DIV_1_OF_2);
-  lcd.createChar(4, DIV_2_OF_2);
-  lcd.createChar(5, END_DIV_0_OF_1);
-  lcd.createChar(6, END_DIV_1_OF_1);
-}
-
-void draw_progressbar(byte pct, int sensorNum) {
-  lcd.setCursor(0, 0);
-  lcd.print("S"); lcd.print(sensorNum); lcd.print(": ");
-  lcd.print(pct); lcd.print(F(" %  "));
-  lcd.setCursor(0, 1);
-  byte nb_columns = map(pct, 0, 100, 0, LCD_NB_COLUMNS * 2 - 2);
-  for (byte i = 0; i < LCD_NB_COLUMNS; ++i) {
-    if (i == 0) {
-      lcd.write(nb_columns > 0 ? (nb_columns -= 1, 1) : (byte)0);
-    } else if (i == LCD_NB_COLUMNS - 1) {
-      lcd.write(nb_columns > 0 ? 6 : 5);
-    } else {
-      if      (nb_columns >= 2) { lcd.write(4); nb_columns -= 2; }
-      else if (nb_columns == 1) { lcd.write(3); nb_columns -= 1; }
-      else                        lcd.write(2);
-    }
-  }
-}
-`
-    : "";
-
-  function sensorRead(b, idx) {
-    const analogBlocks = blocks.filter((bl) => bl.port.startsWith("A"));
-    const readPin =
-      usesButton && analogBlocks.length === 1 ? "currentInput" : b.port;
-
-    if (b.sensor === "DF_robot") {
-      return (
-        `  int sensorValue_${idx} = analogRead(${readPin});\n` +
-        `  x = a_${idx} * (log(sensorValue_${idx} - Vwat_${idx}) - b_${idx});\n\n` +
-        `  if (sensorValue_${idx} <= Vwat_${idx}) {\n` +
-        `    percent = 100;\n` +
-        `  } else if (x <= WP_${idx}) {\n` +
-        `    percent = 0;\n` +
-        `  } else if (x >= FC_${idx}) {\n` +
-        `    percent = 100;\n` +
-        `  } else {\n` +
-        `    x = (x - WP_${idx}) * 100.0 / (FC_${idx} - WP_${idx});\n` +
-        `    percent = (int)x;\n` +
-        `  }\n`
-      );
-    }
-    if (b.sensor === "Watermark") {
-      const Vwat = pval(b, "water_val");
-      const Vair = pval(b, "air_val");
-      return (
-        `  int sensorValue_${idx} = analogRead(${readPin});\n` +
-        `  percent = (int)constrain((sensorValue_${idx} - ${Vwat}) * 100.0 / (${Vair} - ${Vwat}), 0, 100);\n`
-      );
-    }
-    if (b.sensor === "Watermark_Temperature") {
-      return (
-        `  int sensorValue_${idx} = analogRead(${readPin});\n` +
-        `  percent = sensorValue_${idx}; /* TODO: apply temperature correction */\n`
-      );
-    }
-    return (
-      `  int sensorValue_${idx} = analogRead(${readPin});\n` +
-      `  percent = sensorValue_${idx};\n`
-    );
-  }
-
-  function vizBlock(b, idx) {
-    switch (b.viz) {
-      case "none":
-        return `  /* no visualization for sensor ${idx} */`;
-      case "bar":
-        return `  draw_progressbar(percent, ${idx});`;
-      case "raw":
-        return `  Serial.print("Sensor ${idx} [${b.port}] raw: ");\n  Serial.println(sensorValue_${idx});`;
-      case "state":
-        return (
-          `  if      (percent == 0)  Serial.println("Sensor ${idx} [${b.port}]: VERY DRY");\n` +
-          `  else if (percent < 50)  Serial.println("Sensor ${idx} [${b.port}]: DRY");\n` +
-          `  else                    Serial.println("Sensor ${idx} [${b.port}]: WET");`
-        );
-      case "transformed":
-        return `  Serial.print("Sensor ${idx} [${b.port}] TAW%: ");\n  Serial.println(percent);`;
-      case "rate":
-        return (
-          `  static int prev_${idx} = 0;\n` +
-          `  int rate_${idx} = percent - prev_${idx};\n` +
-          `  prev_${idx} = percent;\n` +
-          `  Serial.print("Sensor ${idx} [${b.port}] rate: ");\n` +
-          `  Serial.println(rate_${idx});`
-        );
-      default:
-        return `  Serial.println(percent);`;
-    }
-  }
-
-  let loopBody = "";
-  if (usesButton) loopBody += `  handleButtonPress();\n\n`;
-  blocks.forEach((b, i) => {
-    const idx = i + 1;
-    loopBody += sensorRead(b, idx) + "\n";
-    loopBody += `  Serial.print("Analog value (A");\n`;
-    loopBody += `  Serial.print(currentInput - A1 + 1);\n`;
-    loopBody += `  Serial.print("): ");\n`;
-    loopBody += `  Serial.println(sensorValue_${idx});\n\n`;
-    loopBody += vizBlock(b, idx) + "\n\n";
-  });
-
-  return `/*
- * ════════════════════════════════════════════════
- *  Pillowtech Code Generator
- *  Generated : ${now}
- *  Sensors   : ${numBlocks}
- * ────────────────────────────────────────────────
-${header}
-${surveySection} * ════════════════════════════════════════════════
- */
-
-#include <math.h>
-${lcdIncludes}
-#define BAUD_RATE 9600
-
-/* Module variables */
-int   percent;
-float x;
-${lcdGlobals}${buttonGlobals}
-/* Calibration constants */
-${constants.trimEnd()}
-${progressBarCode}${buttonFunctions}
-void setup() {
-  Serial.begin(BAUD_RATE);
-${lcdSetup}  Serial.println("Sketch ready.");
-}
-
-void loop() {
-
-${loopBody}  delay(1000);
-}
-`;
 }
 
 function downloadFile(content, filename) {
@@ -860,6 +892,80 @@ function downloadFile(content, filename) {
 
 let _pendingBlocks = [];
 let _pendingFilename = "";
+
+const SAVED_KEY = "pillowtech_survey_v1";
+const FILES_KEY = "pillowtech_files_v1";
+let _savedAnswers = null;
+let _savedFiles = {};
+
+function loadSavedFiles() {
+  try {
+    const raw = localStorage.getItem(FILES_KEY);
+    _savedFiles = raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    _savedFiles = {};
+  }
+}
+
+function saveFile(filename, blocks) {
+  try {
+    _savedFiles[filename] = {
+      blocks,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem(FILES_KEY, JSON.stringify(_savedFiles));
+  } catch (_) {}
+}
+
+function deleteSavedFile(filename) {
+  delete _savedFiles[filename];
+  try {
+    localStorage.setItem(FILES_KEY, JSON.stringify(_savedFiles));
+  } catch (_) {}
+}
+
+function loadSavedAnswers() {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    _savedAnswers = raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    _savedAnswers = null;
+  }
+  renderSavedBanner();
+}
+
+function saveAnswers(answers) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(answers));
+    _savedAnswers = answers;
+    renderSavedBanner();
+  } catch (_) {}
+}
+
+function clearSavedAnswers() {
+  try {
+    localStorage.removeItem(SAVED_KEY);
+  } catch (_) {}
+  _savedAnswers = null;
+  renderSavedBanner();
+}
+
+function renderSavedBanner() {
+  const banner = document.getElementById("saved-banner");
+  if (!banner) return;
+  if (_savedAnswers && _savedAnswers.name) {
+    banner.innerHTML = `Welcome back, <strong>${_savedAnswers.name}</strong>. Your info is saved.
+      <a href="#" onclick="editSavedAnswers(); return false;">Edit my info</a> ·
+      <a href="#" onclick="clearSavedAnswers(); return false;">Clear</a>`;
+    banner.classList.add("show");
+  } else {
+    banner.classList.remove("show");
+  }
+}
+
+function editSavedAnswers() {
+  openSurvey(_savedAnswers);
+}
 
 function handleGenerate() {
   document
@@ -892,22 +998,27 @@ function handleGenerate() {
       ? `sensor_${_pendingBlocks[0].port}.ino`
       : `sensors_${_pendingBlocks.map((b) => b.port).join("_")}.ino`;
 
-  openSurvey();
+  if (_savedAnswers && _savedAnswers.name && _savedAnswers.email) {
+    openFilenamePrompt();
+  } else {
+    openSurvey();
+  }
 }
 
-function openSurvey() {
+function openSurvey(prefill = {}) {
   const overlay = document.getElementById("survey-overlay");
   const body = document.getElementById("survey-body");
 
   body.innerHTML = SURVEY_QUESTIONS.map((q) => {
     const req = q.required ? `<span class="req">*</span>` : "";
+    const val = prefill[q.key] || "";
     if (q.type === "select") {
       return `
         <div class="field survey-field">
           <label>${q.label} ${req}</label>
           <select id="sq-${q.key}" ${q.required ? "required" : ""}>
             <option value="">— select —</option>
-            ${q.options.map((o) => `<option value="${o}">${o}</option>`).join("")}
+            ${q.options.map((o) => `<option value="${o}" ${o === val ? "selected" : ""}>${o}</option>`).join("")}
           </select>
           <span class="err-msg" id="sqerr-${q.key}">Required.</span>
         </div>`;
@@ -917,6 +1028,7 @@ function openSurvey() {
         <label>${q.label} ${req}</label>
         <input type="${q.type}" id="sq-${q.key}"
                placeholder="${q.placeholder || ""}"
+               value="${val.replace(/"/g, "&quot;")}"
                ${q.required ? "required" : ""}>
         <span class="err-msg" id="sqerr-${q.key}">Required.</span>
       </div>`;
@@ -929,6 +1041,92 @@ function openSurvey() {
   if (btn) btn.disabled = true;
 }
 
+function openFilenamePrompt() {
+  const overlay = document.getElementById("survey-overlay");
+  const body = document.getElementById("survey-body");
+
+  const fileNames = Object.keys(_savedFiles).sort();
+  const hasFiles = fileNames.length > 0;
+
+  const fileList = hasFiles
+    ? `
+        <div class="filename-section">
+          <div class="filename-section-head">
+            <strong>Option 1 — Reuse a previous filename</strong>
+            <span class="filename-section-help">Click a file below to fill in its name automatically. Your old file on your computer will be replaced when you re-download.</span>
+          </div>
+          <div class="saved-file-list">
+            ${fileNames
+              .map((fn) => {
+                const ts = new Date(_savedFiles[fn].timestamp).toLocaleString();
+                return `
+                <div class="saved-file-row">
+                  <button type="button" class="saved-file-btn"
+                          onclick="selectSavedFilename('${fn.replace(/'/g, "\\'")}')">
+                    <span class="saved-file-name">${fn}</span>
+                    <span class="saved-file-meta">
+                      <span class="saved-file-ts">Last used: ${ts}</span>
+                      <span class="saved-file-action">Click to use →</span>
+                    </span>
+                  </button>
+                  <button type="button" class="saved-file-del"
+                          onclick="removeSavedFile('${fn.replace(/'/g, "\\'")}'); return false;"
+                          title="Forget this filename">✕</button>
+                </div>`;
+              })
+              .join("")}
+          </div>
+        </div>
+        <div class="saved-file-divider"><span>OR</span></div>
+        <div class="filename-section">
+          <div class="filename-section-head">
+            <strong>Option 2 — Make a new file</strong>
+            <span class="filename-section-help">Type a new name to create a separate file.</span>
+          </div>
+        </div>
+      `
+    : "";
+
+  body.innerHTML = `
+    ${fileList}
+    <div class="field survey-field">
+      <label>${hasFiles ? "File name (new or selected from above)" : "File name"} <span class="req">*</span></label>
+      <input type="text" id="sq-filename"
+             placeholder="e.g. apples_field2 (no spaces, no .ino)" required>
+      <span class="err-msg" id="sqerr-filename">Required.</span>
+    </div>
+    <p class="saved-info-note">
+      Submitting as <strong>${_savedAnswers.name}</strong> (${_savedAnswers.email}).
+      <a href="#" onclick="closeSurvey(); editSavedAnswers(); return false;">Not you?</a>
+    </p>
+  `;
+
+  overlay.classList.add("show");
+  const cb = document.getElementById("consent-checkbox");
+  const btn = document.getElementById("confirm-btn");
+  if (cb) cb.checked = true;
+  if (btn) btn.disabled = false;
+}
+
+function selectSavedFilename(fn) {
+  const input = document.getElementById("sq-filename");
+  if (input) {
+    input.value = fn;
+    input.focus();
+  }
+}
+
+function removeSavedFile(fn) {
+  if (
+    !confirm(
+      `Delete saved configuration "${fn}"? This only removes it from your browser, not from your downloaded files.`,
+    )
+  )
+    return;
+  deleteSavedFile(fn);
+  openFilenamePrompt();
+}
+
 function closeSurvey() {
   document.getElementById("survey-overlay").classList.remove("show");
 }
@@ -938,6 +1136,7 @@ function confirmSurvey() {
   SURVEY_QUESTIONS.forEach((q) => {
     if (!q.required) return;
     const el = document.getElementById(`sq-${q.key}`);
+    if (!el) return;
     const err = document.getElementById(`sqerr-${q.key}`);
     const empty = !el.value || el.value.trim() === "";
     el.classList.toggle("error", empty);
@@ -948,8 +1147,19 @@ function confirmSurvey() {
 
   const answers = {};
   SURVEY_QUESTIONS.forEach((q) => {
-    answers[q.key] = document.getElementById(`sq-${q.key}`).value.trim();
+    const el = document.getElementById(`sq-${q.key}`);
+    if (el) {
+      answers[q.key] = el.value.trim();
+    } else if (_savedAnswers && _savedAnswers[q.key]) {
+      answers[q.key] = _savedAnswers[q.key];
+    } else {
+      answers[q.key] = "";
+    }
   });
+
+  const toSave = { ...answers };
+  delete toSave.filename;
+  saveAnswers(toSave);
 
   closeSurvey();
 
@@ -959,8 +1169,9 @@ function confirmSurvey() {
     .replace(/\s+/g, "_")
     .replace(/\.ino$/i, "");
   const filename = rawName ? rawName + ".ino" : _pendingFilename;
-
   downloadFile(code, filename);
+
+  saveFile(filename, _pendingBlocks);
 
   document.getElementById("preview-code").textContent = code;
   document.getElementById("preview-wrap").classList.add("show");
@@ -989,9 +1200,11 @@ function confirmSurvey() {
 
     const SHEET_URL =
       "https://script.google.com/macros/s/AKfycbzBDJalu2LdNU2UC-ySZJlxW5dh_3Djhq73sBU4JycPbOGjfBLdSuepAJs9jiIKUH1uUw/exec";
-    fetch(SHEET_URL, { method: "POST", body: JSON.stringify(payload) }).catch(
-      () => {},
-    );
+    fetch(SHEET_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(payload),
+    }).catch(() => {});
   } catch (_) {}
 }
 
@@ -1006,3 +1219,5 @@ function copyPreview() {
 
 initTooltips();
 addBlock();
+loadSavedAnswers();
+loadSavedFiles();

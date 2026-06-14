@@ -3,15 +3,33 @@ const SENSOR_TYPES = {
     label: "DF_robot",
     tip: "Direct sensor reading",
     outputs: [
-      { value: "Raw value", tip: "Direct sensor reading" },
-      { value: "Transformed Raw Value", tip: "Mapped to 0-100 scale" },
-      { value: "TAW", tip: "Total Available Water" },
-      { value: "Rate of change", tip: "Change between readings" },
-      { value: "Wetting front", tip: "" },
-      { value: "1-2-3 point calibration", tip: "" },
+      {
+        value: "Raw value",
+        tip: "Direct sensor reading",
+      },
+      {
+        value: "Transformed Raw Value",
+        tip: "",
+      },
+      {
+        value: "TAW",
+        tip: "",
+      },
+      {
+        value: "Rate of change",
+        tip: "",
+      },
+      {
+        value: "Wetting front",
+        tip: "",
+      },
+      {
+        value: "1-2-3 point calibration",
+        tip: "",
+      },
       {
         value: "Threshold (very dry/dry/wet)",
-        tip: "Three-state classification",
+        tip: "",
       },
     ],
     params: [
@@ -36,41 +54,52 @@ const SENSOR_TYPES = {
       {
         name: "fc",
         display: "Field Capacity",
-        label:
-          "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
+        label: "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
         value: "0",
         min: "0",
-        max: "1023",
-        units: "%vol",
+        max: "1",
+        units: "m³/m³",
       },
       {
         name: "wp",
         display: "Wilting point",
-        label:
-          "Wilting point: When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
+        label: "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
         value: "0",
         min: "0",
-        max: "1023",
-        units: "%vol",
+        max: "1",
+        units: "m³/m³",
       },
       {
         name: "k",
         display: "k",
-        label:
-          "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
+        label: "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
         value: "0",
         min: "0",
-        max: "1023",
-        units: "m³/m³",
+        max: "1",
+        units: "",
       },
     ],
   },
   Watermark: {
     label: "Watermark",
-    tip: "Watermark soil moisture sensor",
+    tip: "",
     outputs: [
-      { value: "Raw value", tip: "Direct ADC reading" },
-      { value: "Transformed Raw Value", tip: "Mapped to 0-100 scale" },
+      {
+        value: "Transformed Raw value",
+        tip: "",
+      },
+      {
+        value: "Raw value",
+        tip: "N/A",
+      },
+      {
+        value: "Transformed raw value",
+        tip: "",
+      },
+      {
+        value: "Raw values",
+        tip: "",
+      },
     ],
     params: [
       {
@@ -79,8 +108,8 @@ const SENSOR_TYPES = {
         label: "Air value: raw reading in open air",
         value: "0",
         min: "0",
-        max: "1023",
-        units: "ADC",
+        max: "200",
+        units: "kΩ",
       },
       {
         name: "water_val",
@@ -88,20 +117,39 @@ const SENSOR_TYPES = {
         label: "Water value: raw reading submerged in water",
         value: "0",
         min: "0",
-        max: "1023",
-        units: "ADC",
+        max: "200",
+        units: "kΩ",
+      },
+      {
+        name: "Resistance",
+        display: "Resistance",
+        label: "Resistance",
+        value: "0",
+        min: "0",
+        max: "200",
+        units: "kΩ",
       },
     ],
   },
   Watermark_Temperature: {
     label: "Watermark_Temperature",
-    tip: "Watermark with temperature compensation",
+    tip: "",
     outputs: [
-      { value: "Raw value", tip: "Direct ADC reading" },
-      { value: "Temperature", tip: "Temperature reading (TODO)" },
-      { value: "Tension", tip: "Soil tension (TODO)" },
+      {
+        value: "Transformed raw value",
+        tip: "",
+      },
+      {
+        value: "Temperature",
+        tip: "",
+      },
+      {
+        value: "Tension",
+        tip: "",
+      },
     ],
-    params: [],
+    params: [
+    ],
   },
 };
 
@@ -150,22 +198,30 @@ const PORTS = [
 ];
 
 const VIZ_OPTIONS = [
-  { value: "none", label: "No visualization", tip: "No output." },
-  { value: "bar", label: "Loading bar (LCD)", tip: "16x2 LCD progress bar." },
   {
-    value: "raw_lcd",
-    label: "Raw value (LCD)",
-    tip: "Displays the raw ADC reading on the LCD screen",
+    value: "none",
+    label: "No visualization",
+    tip: "Something that would display the information in a visual representation on the LCD screen. Currently there is nothing selected.",
   },
   {
-    value: "state_lcd",
-    label: "State: very dry / dry / wet (LCD)",
-    tip: "Three-state classification on the LCD screen",
+    value: "bar",
+    label: "Loading bar",
+    tip: "Displays a loading bar that changes based on water content.",
   },
   {
-    value: "transformed_lcd",
-    label: "Transformed value (LCD)",
-    tip: "Displays the percent on the LCD screen",
+    value: "raw",
+    label: "Raw value",
+    tip: "Displays the raw sensor value",
+  },
+  {
+    value: "state",
+    label: "State: very dry / dry / wet",
+    tip: "Displays the general state at which soil seems to be",
+  },
+  {
+    value: "transformed",
+    label: "Transformed Raw Value 0-100",
+    tip: "A more concise version of the raw sensor value",
   },
 ];
 

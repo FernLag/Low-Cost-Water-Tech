@@ -487,6 +487,7 @@ body {
   background: #0e4a8f;
 }
 
+/* ── responsive ── */
 @media (max-width: 520px) {
   body {
     padding: 24px 12px 60px;
@@ -771,4 +772,25 @@ body {
   flex: 1;
   height: 1px;
   background: #d0daa8;
+}
+
+.consent-link {
+  color: #2a6f0a;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.consent-link:hover {
+  color: #1a4a05;
+}
+
+.wetting-front-msg {
+  background: #fff6e0;
+  border: 1px solid #e8d199;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #6b4e0a;
+  line-height: 1.5;
+  margin-bottom: 10px;
 }

@@ -3,6 +3,8 @@ build.py — regenerates main.js config blocks from sensor_configuration.xlsx
 
 This script rewrites these blocks in main.js based on the Excel file:
   - SENSOR_TYPES     ← sheet "sensors" + "params"
+  - OUTPUT_PARAMS    ← sheet "sensors" (in_a..in_e columns)
+  - OUTPUT_VIZ       ← sheet "sensors" (new "viz" column, pipe-separated viz_keys)
   - PORT_TIPS, PORTS ← sheet "ports"
   - VIZ_OPTIONS      ← sheet "viz_options"
   - SURVEY_QUESTIONS ← sheet "survey_questions"
@@ -40,6 +42,21 @@ def sheet_rows(sheet_name, skip=1):
 def safe_js_key(key):
     return re.sub(r'[^a-zA-Z0-9_]', '_', key)
 
+def sheet_header(sheet_name):
+    ws = wb[sheet_name]
+    for row in ws.iter_rows(min_row=1, max_row=1, values_only=True):
+        return [str(c).strip().lower() if c is not None else "" for c in row]
+    return []
+
+sensors_header = sheet_header("sensors")
+def col_index(name, default):
+    try:
+        return sensors_header.index(name.lower())
+    except ValueError:
+        return default
+
+VIZ_COL = col_index("viz", 11)
+
 sensors_raw = sheet_rows("sensors")
 
 active_keys = []
@@ -58,6 +75,7 @@ for row in sensors_raw:
     inp_d    = row[7]
     inp_e    = row[8]
     equation = row[9] if len(row) > 9 else ""
+    viz_list = row[VIZ_COL] if len(row) > VIZ_COL else ""
 
     if key:
         current_key = safe_js_key(key)
@@ -81,6 +99,7 @@ for row in sensors_raw:
                 "full":     out_full,
                 "equation": equation,
                 "inputs":   [inp_a, inp_b, inp_c, inp_d, inp_e],
+                "viz":      viz_list,
             })
 
 params_raw = sheet_rows("params")
@@ -193,6 +212,39 @@ def build_viz_options():
     return '\n'.join(lines)
 
 
+def build_output_params():
+    lines = ["const OUTPUT_PARAMS = {"]
+    for key in active_keys:
+        outputs = outputs_map.get(key, [])
+        lines.append(f'  {key}: {{')
+        for o in outputs:
+            inputs = [str(i).strip() for i in o["inputs"] if i not in (None, "", " ")]
+            arr = "[" + ", ".join(f'"{jstr(i)}"' for i in inputs) + "]"
+            lines.append(f'    "{jstr(o["value"])}": {arr},')
+        lines.append('  },')
+    lines.append('};')
+    return '\n'.join(lines)
+
+
+def build_output_viz():
+    lines = ["const OUTPUT_VIZ = {"]
+    for key in active_keys:
+        outputs = outputs_map.get(key, [])
+        lines.append(f'  {key}: {{')
+        for o in outputs:
+            raw = o.get("viz", "") or ""
+            vizzes = [v.strip() for v in str(raw).split("|") if v.strip()]
+            if not vizzes:
+                vizzes = ["none"]
+            if "none" not in vizzes:
+                vizzes = ["none"] + vizzes
+            arr = "[" + ", ".join(f'"{jstr(v)}"' for v in vizzes) + "]"
+            lines.append(f'    "{jstr(o["value"])}": {arr},')
+        lines.append('  },')
+    lines.append('};')
+    return '\n'.join(lines)
+
+
 def build_survey_questions():
     lines = ["const SURVEY_QUESTIONS = ["]
     for row in survey_raw:
@@ -228,12 +280,17 @@ js = re.sub(r'const VIZ_OPTIONS = \[.*?\];',
             build_viz_options(), js, flags=re.DOTALL)
 js = re.sub(r'const SURVEY_QUESTIONS = \[.*?\];',
             build_survey_questions(), js, flags=re.DOTALL)
+js = re.sub(r'const OUTPUT_PARAMS = \{.*?\n\};',
+            build_output_params(), js, flags=re.DOTALL)
+js = re.sub(r'const OUTPUT_VIZ = \{.*?\n\};',
+            build_output_viz(), js, flags=re.DOTALL)
 
 with open(MAIN_JS_FILE, "w", encoding="utf-8") as f:
     f.write(js)
 
 print(f"main.js updated — {len(active_keys)} sensor(s), {len(active_ports)} port(s), "
-      f"{len(active_viz)} viz option(s), {len(survey_raw)} survey question(s)")
+      f"{len(active_viz)} viz option(s), {len(survey_raw)} survey question(s), "
+      f"OUTPUT_PARAMS + OUTPUT_VIZ regenerated")
 
 
 os.makedirs(TEMPLATES_DIR, exist_ok=True)

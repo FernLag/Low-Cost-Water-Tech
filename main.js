@@ -4,7 +4,7 @@ const SENSOR_TYPES = {
     tip: "Direct sensor reading",
     outputs: [
       {
-        value: "Raw value",
+        value: "Raw Value",
         tip: "Direct sensor reading",
       },
       {
@@ -12,15 +12,15 @@ const SENSOR_TYPES = {
         tip: "",
       },
       {
-        value: "TAW",
+        value: "Total Available Water",
         tip: "",
       },
       {
-        value: "Rate of change",
+        value: "Rate of Change",
         tip: "",
       },
       {
-        value: "Wetting front",
+        value: "Wetting Front",
         tip: "",
       },
       {
@@ -78,6 +78,24 @@ const SENSOR_TYPES = {
         max: "1",
         units: "",
       },
+      {
+        name: "air_val_min",
+        display: "Air value (minimum)",
+        label: "Air value: raw reading in open air",
+        value: "0",
+        min: "0",
+        max: "0",
+        units: "ADC",
+      },
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label: "Air value: raw reading in open air",
+        value: "1023",
+        min: "1023",
+        max: "1023",
+        units: "ADC",
+      },
     ],
   },
   Watermark: {
@@ -85,19 +103,15 @@ const SENSOR_TYPES = {
     tip: "",
     outputs: [
       {
-        value: "Transformed Raw value",
+        value: "Transformed Raw Value",
         tip: "",
       },
       {
-        value: "Raw value",
-        tip: "N/A",
-      },
-      {
-        value: "Transformed raw value",
+        value: "Raw value (Resistance)",
         tip: "",
       },
       {
-        value: "Raw values",
+        value: "Raw value (Temperature)",
         tip: "",
       },
     ],
@@ -136,7 +150,7 @@ const SENSOR_TYPES = {
     tip: "",
     outputs: [
       {
-        value: "Transformed raw value",
+        value: "Transformed Raw Value",
         tip: "",
       },
       {
@@ -201,7 +215,7 @@ const VIZ_OPTIONS = [
   {
     value: "none",
     label: "No visualization",
-    tip: "Something that would display the information in a visual representation on the LCD screen. Currently there is nothing selected.",
+    tip: "Display the information in a visual representation on the LCD screen. Currently there is nothing selected.",
   },
   {
     value: "bar",
@@ -209,19 +223,34 @@ const VIZ_OPTIONS = [
     tip: "Displays a loading bar that changes based on water content.",
   },
   {
-    value: "raw",
+    value: "raw_lcd",
     label: "Raw value",
     tip: "Displays the raw sensor value",
   },
   {
-    value: "state",
+    value: "state_lcd",
     label: "State: very dry / dry / wet",
     tip: "Displays the general state at which soil seems to be",
   },
   {
-    value: "transformed",
+    value: "transformed_lcd",
     label: "Transformed Raw Value 0-100",
     tip: "A more concise version of the raw sensor value",
+  },
+  {
+    value: "front_lcd",
+    label: "Front detected",
+    tip: "Shows front detected when the wetting front reaches the deep sensor",
+  },
+  {
+    value: "temp_lcd",
+    label: "Temperature",
+    tip: "Displays the temperatue in celsius",
+  },
+  {
+    value: "kpa_lcd",
+    label: "Tension",
+    tip: "Displays soil tension in kPa",
   },
 ];
 
@@ -263,71 +292,173 @@ const SURVEY_QUESTIONS = [
   },
 ];
 
+/* OUTPUT_PARAMS maps each sensor+output to the EXACT in_a..in_e columns from the Excel sheet.
+   Only these params show on the form for the selected output. */
+const OUTPUT_PARAMS = {
+  DF_robot: {
+    "Raw Value": ["air_val_min"],
+    "Transformed Raw Value": ["air_val_max", "water_val"],
+    "Total Available Water": ["air_val", "water_val", "FC", "WP"],
+    "Rate of Change": [],
+    "Wetting Front": ["shallow", "deep", "threshold"],
+    "1-2-3 point calibration": ["a", "b"],
+    "Threshold (very dry/dry/wet)": ["a", "b"],
+  },
+  Watermark: {
+    "Transformed Raw Value": ["air_val_non_modifiable", "water_val_non_modifiable"],
+    "Raw value (Resistance)": [],
+    "Raw value (Temperature)": [],
+  },
+  Watermark_Temperature: {
+    "Transformed Raw Value": [],
+    "Temperature": [],
+    "Tension": [],
+  },
+};
+
+const OUTPUT_VIZ = {
+  DF_robot: {
+    "Raw Value": ["none", "raw_lcd"],
+    "Transformed Raw Value": ["none", "bar", "transformed_lcd"],
+    "Total Available Water": ["none", "bar", "transformed_lcd", "state_lcd"],
+    "Rate of Change": ["none", "state_lcd"],
+    "Wetting Front": ["none", "front_lcd"],
+    "1-2-3 point calibration": ["none", "bar", "transformed_lcd"],
+    "Threshold (very dry/dry/wet)": ["none", "state_lcd"],
+  },
+  Watermark: {
+    "Transformed Raw Value": ["none", "state_lcd"],
+    "Raw value (Resistance)": ["none", "raw_lcd"],
+    "Raw value (Temperature)": ["none", "temp_lcd"],
+  },
+  Watermark_Temperature: {
+    "Transformed Raw Value": ["none", "kpa_lcd"],
+    "Temperature": ["none", "temp_lcd"],
+    "Tension": ["none", "kpa_lcd"],
+  },
+};
+
 const TEMPLATES = {
   sensors: {
     DF_robot: {
       constants: `/* Sensor {idx}: DF_robot on port {port} */
-const int   Vwat_{idx} = {water_val};         /* sensor value in water */
-const float b_{idx}    = log({air_val} - {water_val});  /* b = ln(Vair - Vwat) */
-const float a_{idx}    = -1.0 / {k};          /* a = -1/k */
-float WP_{idx}         = {wp};                 /* wilting point (%vol) */
-float FC_{idx}         = {fc};                 /* field capacity (%vol) */
+const int   air_val_min_{idx} = {air_val_min};
+const int   air_val_max_{idx} = {air_val_max};
+const int   Vair_{idx}        = {air_val};
+const int   Vwat_{idx}        = {water_val};
+const float b_{idx}           = log({air_val} - {water_val});
+const float a_coef_{idx}      = -1.0 / {k};
+float WP_{idx}                = {wp};
+float FC_{idx}                = {fc};
+const int   thr_a_{idx}       = {a};
+const int   thr_b_{idx}       = {b};
+const int   front_thr_{idx}   = {threshold};
 `,
       read: `  int sensorValue_{idx} = analogRead({readPin});
-  x = a_{idx} * (log(sensorValue_{idx} - Vwat_{idx}) - b_{idx});`,
+  x = a_coef_{idx} * (log(sensorValue_{idx} - Vwat_{idx}) - b_{idx});`,
     },
 
     Watermark: {
       constants: `/* Sensor {idx}: Watermark on port {port} */
-const int Vair_{idx} = {air_val};            /* sensor value in air */
-const int Vwat_{idx} = {water_val};          /* sensor value in water */
+const float Rx_{idx}    = 10000.0;   /* series resistor (Ω), fixed on the Pillowtech board */
+const float Vs_{idx}    = 5.0;       /* Uno R3 supply voltage */
+const int   thr_a_{idx} = {air_val_non_modifiable};
+const int   thr_b_{idx} = {water_val_non_modifiable};
 `,
-      read: `  int sensorValue_{idx} = analogRead({readPin});`,
+      read: `  int   sensorValue_{idx} = analogRead({readPin});
+  float A1_{idx} = (sensorValue_{idx} / 1023.0) * Vs_{idx};   /* analog measurement in volts */
+  float R_{idx}  = Rx_{idx} * (Vs_{idx} - A1_{idx}) / A1_{idx};`,
     },
 
     Watermark_Temperature: {
       constants: `/* Sensor {idx}: Watermark_Temperature on port {port} */
+const float Rx_{idx} = 10000.0;   /* series resistor (Ω), fixed on the Pillowtech board */
+const float Vs_{idx} = 5.0;       /* Uno R3 supply voltage */
 `,
-      read: `  int sensorValue_{idx} = analogRead({readPin});`,
+      read: `  int   sensorValue_{idx} = analogRead({readPin});
+  float A1_{idx} = (sensorValue_{idx} / 1023.0) * Vs_{idx};   /* analog measurement in volts */
+  float R_{idx}  = Rx_{idx} * (Vs_{idx} - A1_{idx}) / A1_{idx};
+  float T_{idx}  = (sensorValue_{idx} / 1023.0) * 100.0;       /* temperature, directly read (scaled) */`,
     },
   },
 
   outputs: {
-    "Raw value": `  percent = sensorValue_{idx};`,
+    DF_robot: {
+      "Raw Value": `  percent = sensorValue_{idx};`,
 
-    "Transformed Raw Value": `  percent = (int)constrain((sensorValue_{idx} - Vwat_{idx}) * 100.0 / (Vair_{idx} - Vwat_{idx}), 0, 100);`,
+      "Transformed Raw Value": `  /* (X-min)/(max-min)*100 */
+  percent = (int)constrain(
+    ((float)sensorValue_{idx} - Vwat_{idx}) * 100.0 / (air_val_max_{idx} - Vwat_{idx}),
+    0, 100
+  );`,
 
-    TAW: `  if (sensorValue_{idx} <= Vwat_{idx}) {
+      "Total Available Water (volumetric?)": `  if (sensorValue_{idx} <= Vwat_{idx}) {
     percent = 100;
   } else if (x <= WP_{idx}) {
     percent = 0;
   } else if (x >= FC_{idx}) {
     percent = 100;
   } else {
-    percent = (int)((x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx}));
+    x = (x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx});
+    percent = (int)x;
   }`,
 
-    "Threshold (very dry/dry/wet)": `  if (sensorValue_{idx} <= Vwat_{idx}) {
+      "Total Available Water": `  if (sensorValue_{idx} <= Vwat_{idx}) {
     percent = 100;
   } else if (x <= WP_{idx}) {
     percent = 0;
   } else if (x >= FC_{idx}) {
     percent = 100;
   } else {
-    percent = (int)((x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx}));
+    x = (x - WP_{idx}) * 100.0 / (FC_{idx} - WP_{idx});
+    percent = (int)x;
   }`,
 
-    "Rate of change": `  static int prev_{idx} = 0;
-  percent = sensorValue_{idx} - prev_{idx};
-  prev_{idx} = sensorValue_{idx};`,
+      "Rate of Change": `  /* dV/dt = a (good or stop irrigating) */
+  static unsigned long lastTime_{idx}  = 0;
+  static int            prevValue_{idx} = sensorValue_{idx};
+  unsigned long nowTime_{idx} = millis();
+  float dt_{idx} = (nowTime_{idx} - lastTime_{idx}) / 1000.0;
+  float dVdt_{idx} = (dt_{idx} > 0) ? ((sensorValue_{idx} - prevValue_{idx}) / dt_{idx}) : 0;
+  percent = (dVdt_{idx} <= thr_a_{idx}) ? 100 : 0;  /* 100 = good, 0 = stop irrigating */
+  prevValue_{idx} = sensorValue_{idx};
+  lastTime_{idx}  = nowTime_{idx};`,
 
-    "Wetting front": `  percent = sensorValue_{idx};  /* TODO: implement wetting front detection */`,
+      "Wetting Front": `  /* Dual-depth wetting front: shallow = this sensor, deep = partner port */
+  int deepValue_{idx} = analogRead({partnerPort});
+  static int deepBaseline_{idx} = deepValue_{idx};
+  percent = (abs(deepValue_{idx} - deepBaseline_{idx}) > front_thr_{idx}) ? 100 : 0;`,
 
-    "1-2-3 point calibration": `  percent = sensorValue_{idx};  /* TODO: implement 1-2-3 point calibration */`,
+      "1-2-3 point calibration": `  /* soil_moisture - WP*100/(FC-WP) */
+  float soil_moisture_{idx} = (float)(sensorValue_{idx} - thr_a_{idx}) * 100.0 / (thr_b_{idx} - thr_a_{idx});
+  percent = (int)(soil_moisture_{idx} - WP_{idx} * 100.0 / (FC_{idx} - WP_{idx}));`,
 
-    Temperature: `  percent = sensorValue_{idx};  /* TODO: convert ADC to temperature */`,
+      "Threshold (very dry/dry/wet)": `  if      (sensorValue_{idx} < thr_a_{idx}) percent = 0;
+  else if (sensorValue_{idx} < thr_b_{idx}) percent = 50;
+  else                                       percent = 100;`,
+    },
 
-    Tension: `  percent = sensorValue_{idx};  /* TODO: convert ADC to soil tension */`,
+    Watermark: {
+      "Transformed Raw Value": `  if      (R_{idx} < thr_a_{idx}) percent = 0;
+  else if (R_{idx} < thr_b_{idx}) percent = 50;
+  else                              percent = 100;`,
+
+      "Raw value (Resistance)": `  percent = (int)R_{idx};  /* resistance in kΩ */`,
+    },
+
+    Watermark_Temperature: {
+      "Raw value (Temperature)": `  percent = (int)T_{idx};  /* temperature, directly read */`,
+
+      "Transformed Raw Value": `  /* kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T) */
+  float kPa_{idx} = (-3.213f * R_{idx} - 4.093f) / (1.0f - 0.009733f * R_{idx} - 0.01205f * T_{idx});
+  percent = (int)kPa_{idx};`,
+
+      Temperature: `  percent = (int)T_{idx};  /* temperature, directly read */`,
+
+      Tension: `  /* kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T) */
+  float kPa_{idx} = (-3.213f * R_{idx} - 4.093f) / (1.0f - 0.009733f * R_{idx} - 0.01205f * T_{idx});
+  percent = (int)kPa_{idx};`,
+    },
   },
 
   viz: {
@@ -344,7 +475,6 @@ const int Vwat_{idx} = {water_val};          /* sensor value in water */
 const int LCD_NB_ROWS    = 2;
 const int LCD_NB_COLUMNS = 16;
 
-/* Progress bar custom characters */
 byte START_DIV_0_OF_1[8] = { B01111, B11000, B10000, B10000, B10000, B10000, B11000, B01111 };
 byte START_DIV_1_OF_1[8] = { B01111, B11000, B10011, B10111, B10111, B10011, B11000, B01111 };
 byte DIV_0_OF_2[8]       = { B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111 };
@@ -420,12 +550,45 @@ void draw_progressbar(byte pct, int analogNum) {
   lcd.setCursor(0, 1);
   lcd.print(F("                "));`,
     },
+
+    front_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  if (percent == 100) lcd.print(F("Front detected  "));
+  else                lcd.print(F("No front yet    "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
+
+    temp_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(currentInput - A1 + 1); lcd.print(": ");
+  lcd.print(percent); lcd.print(F(" C       "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
+
+    kpa_lcd: {
+      includes: "",
+      globals: "",
+      setup: "",
+      loop: `  lcd.setCursor(0, 0);
+  lcd.print("A"); lcd.print(currentInput - A1 + 1); lcd.print(": ");
+  lcd.print(percent); lcd.print(F(" kPa     "));
+  lcd.setCursor(0, 1);
+  lcd.print(F("                "));`,
+    },
   },
 
   buttonNav: {
     globals: `const int buttonPin = A0;
 int currentInput    = A1;
-const int numInputs = 5;  /* A1 to A5 */
+const int numInputs = 5;
 
 int readButton() {
   int v = analogRead(buttonPin);
@@ -492,8 +655,12 @@ function buildIno(blocks, surveyAnswers = {}) {
   blocks.forEach((b, i) => {
     const idx = i + 1;
     const readPin = usesButton ? "currentInput" : b.port;
-
-    const vars = { idx, port: b.port, readPin };
+    const vars = {
+      idx,
+      port: b.port,
+      readPin,
+      partnerPort: b.partnerPort || "A2",
+    };
     b.params.forEach((p) => {
       vars[p.name] =
         p.value !== "" && p.value !== null && p.value !== undefined
@@ -509,12 +676,11 @@ function buildIno(blocks, surveyAnswers = {}) {
       loopBody += `  int sensorValue_${idx} = analogRead(${readPin});\n`;
     }
 
-    const outputTpl = lookupTemplate(TEMPLATES.outputs, b.output);
-    if (outputTpl) {
-      loopBody += render(outputTpl, vars) + "\n";
-    } else {
-      loopBody += `  percent = sensorValue_${idx};\n`;
-    }
+    const sensorOutputs = lookupTemplate(TEMPLATES.outputs, b.sensor) || {};
+    const outputTpl = lookupTemplate(sensorOutputs, b.output);
+    loopBody += outputTpl
+      ? render(outputTpl, vars) + "\n"
+      : `  percent = sensorValue_${idx};\n`;
 
     if (usesButton) {
       loopBody += `  Serial.print("Analog value (A");\n`;
@@ -547,8 +713,6 @@ function buildIno(blocks, surveyAnswers = {}) {
     ? ` * ────────────────────────────────────────────────\n${surveyLines}\n`
     : "";
 
-  const includeBlock = [...includes].join("\n");
-
   return `/*
  * ════════════════════════════════════════════════
  *  Pillowtech Code Generator
@@ -559,7 +723,7 @@ ${header}
 ${surveySection} * ════════════════════════════════════════════════
  */
 
-${includeBlock}
+${[...includes].join("\n")}
 
 #define BAUD_RATE 9600
 
@@ -665,10 +829,7 @@ function addBlock() {
 
   block.innerHTML = `
     <div class="block-head">
-      <span class="block-title">
-        <span class="sensor-num" id="bnum-${bid}"></span>
-        Sensor block
-      </span>
+      <span class="block-title"><span class="sensor-num" id="bnum-${bid}"></span> Sensor block</span>
       <button class="remove-btn" onclick="removeBlock(${bid})">Remove block</button>
     </div>
     <div class="block-body">
@@ -690,10 +851,7 @@ function addBlock() {
 
       <div class="section-card">
         <div class="section-head">
-          <span class="section-label">
-            Output <span class="req">*</span>
-            ${tipBadge(defCfg.outputs[0]?.tip || "", `output-tip-${bid}`)}
-          </span>
+          <span class="section-label">Output <span class="req">*</span> ${tipBadge(defCfg.outputs[0]?.tip || "", `output-tip-${bid}`)}</span>
         </div>
         <div class="section-body">
           <div class="field">
@@ -707,20 +865,29 @@ function addBlock() {
 
       <div class="section-card">
         <div class="section-head">
-          <span class="section-label">
-            Visualization ${tipBadge(VIZ_OPTIONS[0]?.tip || "", `viz-tip-${bid}`)}
-          </span>
+          <span class="section-label">Visualization ${tipBadge(VIZ_OPTIONS[0]?.tip || "", `viz-tip-${bid}`)}</span>
         </div>
         <div class="section-body">
           <div class="field">
-            <select id="viz-sel-${bid}" onchange="updateVizTip(${bid})">
-              ${vizOpts}
-            </select>
+            <select id="viz-sel-${bid}" onchange="updateVizTip(${bid})">${vizOpts}</select>
           </div>
         </div>
       </div>
 
-      <div class="section-card">
+      <div class="section-card" id="partner-card-${bid}" style="display:none">
+        <div class="section-head"><span class="section-label">Deep (partner) sensor port <span class="req">*</span></span></div>
+        <div class="section-body">
+          <div class="wetting-front-msg">
+            Wetting front needs two sensors at different depths. This block is the <strong>shallow</strong> sensor.
+            Add a second sensor block for the <strong>deep</strong> sensor, then choose its port here.
+          </div>
+          <div class="field">
+            <select id="partner-sel-${bid}" onchange="refreshAllBlocks()"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card" id="params-card-${bid}">
         <div class="section-head"><span class="section-label">Parameters</span></div>
         <div class="section-body"><div id="params-${bid}"></div></div>
       </div>
@@ -743,6 +910,8 @@ function addBlock() {
   renumberBlocks();
   updateRemoveBtns();
   checkDuplicatePorts();
+  refreshParams(bid);
+  refreshViz(bid);
 }
 
 function removeBlock(bid) {
@@ -776,9 +945,135 @@ function updatePortTip(bid) {
 
 function updateOutputTip(bid) {
   const val = document.getElementById(`output-sel-${bid}`).value;
-  const cfg = SENSOR_TYPES[document.getElementById(`stype-sel-${bid}`).value];
+  const key = document.getElementById(`stype-sel-${bid}`).value;
+  const cfg = SENSOR_TYPES[key];
   const match = cfg?.outputs.find((o) => o.value === val);
   setTip(`output-tip-${bid}`, match?.tip || "");
+  refreshParams(bid);
+  refreshViz(bid);
+}
+
+function refreshViz(bid) {
+  const sensorKey = document.getElementById(`stype-sel-${bid}`).value;
+  const outputVal = document.getElementById(`output-sel-${bid}`).value;
+  const sel = document.getElementById(`viz-sel-${bid}`);
+  if (!sel) return;
+
+  const vizMap = OUTPUT_VIZ[sensorKey] || {};
+  let allowed = vizMap[outputVal];
+  if (!allowed || allowed.length === 0) {
+    allowed = VIZ_OPTIONS.map((v) => v.value);
+  }
+  if (!allowed.includes("none")) allowed = ["none", ...allowed];
+
+  const prev = sel.value;
+  sel.innerHTML = VIZ_OPTIONS.filter((v) => allowed.includes(v.value))
+    .map((v) => `<option value="${v.value}">${v.label}</option>`)
+    .join("");
+
+  if (allowed.includes(prev)) {
+    sel.value = prev;
+  } else {
+    sel.value = "none";
+  }
+  updateVizTip(bid);
+}
+
+function refreshParams(bid) {
+  const sensorKey = document.getElementById(`stype-sel-${bid}`).value;
+  const outputVal = document.getElementById(`output-sel-${bid}`).value;
+  const cfg = SENSOR_TYPES[sensorKey];
+  if (!cfg) return;
+
+  const outputMap = OUTPUT_PARAMS[sensorKey] || {};
+  const needed = outputMap[outputVal] ?? cfg.params.map((p) => p.name);
+
+  document.querySelectorAll(`#params-${bid} .param-row`).forEach((row) => {
+    const rid = row.dataset.rid;
+    const nameEl = document.getElementById(`pname-${rid}`);
+    if (!nameEl) return;
+    const visible = needed.includes(nameEl.value);
+    row.style.display = visible ? "" : "none";
+    const valInput = document.getElementById(`pval-${rid}`);
+    if (valInput) valInput.required = visible;
+  });
+
+  const card = document.getElementById(`params-card-${bid}`);
+  if (card) card.style.display = needed.length === 0 ? "none" : "";
+
+  const partnerCard = document.getElementById(`partner-card-${bid}`);
+  if (partnerCard) {
+    const myPort = document.getElementById(`port-sel-${bid}`).value;
+    const isWettingFront = outputVal === "Wetting Front";
+    const isDeepPartner = isPortUsedAsDeepPartner(myPort, bid);
+
+    if (isWettingFront && !isDeepPartner) {
+      partnerCard.style.display = "";
+      partnerCard.querySelector(".wetting-front-msg").innerHTML =
+        `Wetting front needs two sensors at different depths. This block is the <strong>shallow</strong> sensor. ` +
+        `Add a second sensor block for the <strong>deep</strong> sensor, then choose its port here.`;
+      populatePartnerPorts(bid);
+    } else if (isWettingFront && isDeepPartner) {
+      partnerCard.style.display = "";
+      partnerCard.querySelector(".wetting-front-msg").innerHTML =
+        `This sensor is already linked as the <strong>deep</strong> partner of another wetting-front block. ` +
+        `No partner selection needed here.`;
+      const sel = document.getElementById(`partner-sel-${bid}`);
+      if (sel) sel.style.display = "none";
+    } else {
+      partnerCard.style.display = "none";
+    }
+  }
+}
+
+function isPortUsedAsDeepPartner(port, selfBid) {
+  if (!port) return false;
+  let used = false;
+  document.querySelectorAll(".sensor-block").forEach((block) => {
+    const bid = block.dataset.bid;
+    if (bid === String(selfBid)) return;
+    const out = document.getElementById(`output-sel-${bid}`);
+    const sel = document.getElementById(`partner-sel-${bid}`);
+    if (out && out.value === "Wetting Front" && sel && sel.value === port) {
+      used = true;
+    }
+  });
+  return used;
+}
+
+function populatePartnerPorts(bid) {
+  const sel = document.getElementById(`partner-sel-${bid}`);
+  if (!sel) return;
+  const myPort = document.getElementById(`port-sel-${bid}`).value;
+  const others = [...document.querySelectorAll("[id^='port-sel-']")]
+    .map((el) => el.value)
+    .filter((p) => p !== myPort && /^A[1-5]$/.test(p));
+
+  const current = sel.value;
+  if (others.length === 0) {
+    sel.innerHTML = `<option value="">— add a second sensor block first —</option>`;
+  } else {
+    sel.innerHTML = others
+      .map(
+        (p) =>
+          `<option value="${p}" ${p === current ? "selected" : ""}>${p}</option>`,
+      )
+      .join("");
+  }
+}
+
+function refreshAllPartnerDropdowns() {
+  document.querySelectorAll(".sensor-block").forEach((block) => {
+    const bid = block.dataset.bid;
+    const out = document.getElementById(`output-sel-${bid}`);
+    if (out && out.value === "Wetting Front") populatePartnerPorts(bid);
+  });
+}
+
+function refreshAllBlocks() {
+  document.querySelectorAll(".sensor-block").forEach((block) => {
+    refreshParams(block.dataset.bid);
+  });
 }
 
 function updateVizTip(bid) {
@@ -810,6 +1105,7 @@ function onSensorChange(bid) {
       p.units || "",
     ),
   );
+  refreshParams(bid);
 }
 
 function addParamRow(
@@ -835,7 +1131,7 @@ function addParamRow(
   row.innerHTML = `
     <div class="field">
       <label>Parameter name <span class="req">*</span> ${tooltipText ? tipBadge(tooltipText) : ""}</label>
-      <input type="text" id="pname-${rid}" value="${nameVal}" placeholder="parameter name" required readonly style="display:none">
+      <input type="text" id="pname-${rid}" value="${nameVal}" required readonly style="display:none">
       <div class="param-display-name">${shownName}</div>
     </div>
     <div class="field value-unit-field">
@@ -844,8 +1140,7 @@ function addParamRow(
         <label class="unit-label">Units <span class="req">*</span></label>
       </div>
       <div class="value-unit-row">
-        <input type="number" id="pval-${rid}" value="${defaultVal}"
-               placeholder="0" step="0.001" required
+        <input type="number" id="pval-${rid}" value="${defaultVal}" placeholder="0" step="0.001" required
                ${minVal !== "" ? `min="${minVal}"` : ""}
                ${maxVal !== "" ? `max="${maxVal}"` : ""}
                oninput="
@@ -856,9 +1151,7 @@ function addParamRow(
                    if (parseFloat(this.value) > mx) this.value = mx;
                  }
                  const dot = this.value.indexOf('.');
-                 if (dot !== -1 && this.value.length - dot - 1 > 3) {
-                   this.value = this.value.slice(0, dot + 4);
-                 }
+                 if (dot !== -1 && this.value.length - dot - 1 > 3) this.value = this.value.slice(0, dot + 4);
                ">
         ${unitsVal ? '<div class="unit-box">' + unitsVal + "</div>" : ""}
       </div>
@@ -884,6 +1177,7 @@ function updateParamRemoveBtns(bid) {
 }
 
 function checkDuplicatePorts() {
+  refreshAllPartnerDropdowns();
   const portMap = {};
   const ports = [];
   document.querySelectorAll("[id^='port-sel-']").forEach((el) => {
@@ -894,26 +1188,20 @@ function checkDuplicatePorts() {
     .filter(([, c]) => c > 1)
     .map(([p]) => p);
   const analogCount = ports.filter((p) => /^A[1-5]$/.test(p)).length;
-
   const messages = [];
-  if (dupes.length) {
+  if (dupes.length)
     messages.push(
       `Port${dupes.length > 1 ? "s" : ""} ${dupes.join(", ")} used in more than one block. Each port must be unique.`,
     );
-  }
-  if (analogCount >= 5) {
+  if (analogCount >= 5)
     messages.push(
-      `All 5 analog ports (A1–A5) are in use. To add more sensors, use a digital port (D1–D14). The Arduino only has 5 analog input pins available for sensors.`,
+      `All 5 analog ports (A1–A5) are in use. To add more sensors, use a digital port (D1–D14).`,
     );
-  }
-
   const warn = document.getElementById("port-warning");
   if (messages.length) {
     warn.innerHTML = messages.map((m) => `⚠ ${m}`).join("<br>");
     warn.classList.add("show");
-  } else {
-    warn.classList.remove("show");
-  }
+  } else warn.classList.remove("show");
 }
 
 function validate() {
@@ -965,10 +1253,7 @@ function loadSavedFiles() {
 
 function saveFile(filename, blocks) {
   try {
-    _savedFiles[filename] = {
-      blocks,
-      timestamp: new Date().toISOString(),
-    };
+    _savedFiles[filename] = { blocks, timestamp: new Date().toISOString() };
     localStorage.setItem(FILES_KEY, JSON.stringify(_savedFiles));
   } catch (_) {}
 }
@@ -1035,19 +1320,38 @@ function handleGenerate() {
     const params = [];
     document.querySelectorAll(`#params-${bid} .param-row`).forEach((row) => {
       const rid = row.dataset.rid;
+      if (row.style.display === "none") return;
       params.push({
         name: document.getElementById(`pname-${rid}`)?.value || "",
         value: document.getElementById(`pval-${rid}`)?.value || "",
       });
     });
+    const partnerSel = document.getElementById(`partner-sel-${bid}`);
     _pendingBlocks.push({
       port: document.getElementById(`port-sel-${bid}`).value,
       sensor: document.getElementById(`stype-sel-${bid}`).value,
       output: document.getElementById(`output-sel-${bid}`).value,
       viz: document.getElementById(`viz-sel-${bid}`).value,
+      partnerPort: partnerSel ? partnerSel.value : "",
       params,
     });
   });
+
+  const deepPorts = _pendingBlocks
+    .filter((b) => b.output === "Wetting Front" && b.partnerPort)
+    .map((b) => b.partnerPort);
+  for (const b of _pendingBlocks) {
+    if (
+      b.output === "Wetting Front" &&
+      !b.partnerPort &&
+      !deepPorts.includes(b.port)
+    ) {
+      alert(
+        "A Wetting Front sensor needs a second (deep) sensor block. Add another block and select its port as the deep partner.",
+      );
+      return;
+    }
+  }
 
   _pendingFilename =
     _pendingBlocks.length === 1
@@ -1064,32 +1368,17 @@ function handleGenerate() {
 function openSurvey(prefill = {}) {
   const overlay = document.getElementById("survey-overlay");
   const body = document.getElementById("survey-body");
-
   body.innerHTML = SURVEY_QUESTIONS.map((q) => {
     const req = q.required ? `<span class="req">*</span>` : "";
     const val = prefill[q.key] || "";
-    if (q.type === "select") {
-      return `
-        <div class="field survey-field">
-          <label>${q.label} ${req}</label>
-          <select id="sq-${q.key}" ${q.required ? "required" : ""}>
-            <option value="">— select —</option>
-            ${q.options.map((o) => `<option value="${o}" ${o === val ? "selected" : ""}>${o}</option>`).join("")}
-          </select>
-          <span class="err-msg" id="sqerr-${q.key}">Required.</span>
-        </div>`;
-    }
     return `
       <div class="field survey-field">
         <label>${q.label} ${req}</label>
-        <input type="${q.type}" id="sq-${q.key}"
-               placeholder="${q.placeholder || ""}"
-               value="${val.replace(/"/g, "&quot;")}"
-               ${q.required ? "required" : ""}>
+        <input type="${q.type}" id="sq-${q.key}" placeholder="${q.placeholder || ""}"
+               value="${val.replace(/"/g, "&quot;")}" ${q.required ? "required" : ""}>
         <span class="err-msg" id="sqerr-${q.key}">Required.</span>
       </div>`;
   }).join("");
-
   overlay.classList.add("show");
   const cb = document.getElementById("consent-checkbox");
   const btn = document.getElementById("confirm-btn");
@@ -1100,62 +1389,55 @@ function openSurvey(prefill = {}) {
 function openFilenamePrompt() {
   const overlay = document.getElementById("survey-overlay");
   const body = document.getElementById("survey-body");
-
   const fileNames = Object.keys(_savedFiles).sort();
   const hasFiles = fileNames.length > 0;
 
   const fileList = hasFiles
     ? `
-        <div class="filename-section">
-          <div class="filename-section-head">
-            <strong>Option 1 — Reuse a previous filename</strong>
-            <span class="filename-section-help">Click a file below to fill in its name automatically. Your old file on your computer will be replaced when you re-download.</span>
-          </div>
-          <div class="saved-file-list">
-            ${fileNames
-              .map((fn) => {
-                const ts = new Date(_savedFiles[fn].timestamp).toLocaleString();
-                return `
-                <div class="saved-file-row">
-                  <button type="button" class="saved-file-btn"
-                          onclick="selectSavedFilename('${fn.replace(/'/g, "\\'")}')">
-                    <span class="saved-file-name">${fn}</span>
-                    <span class="saved-file-meta">
-                      <span class="saved-file-ts">Last used: ${ts}</span>
-                      <span class="saved-file-action">Click to use →</span>
-                    </span>
-                  </button>
-                  <button type="button" class="saved-file-del"
-                          onclick="removeSavedFile('${fn.replace(/'/g, "\\'")}'); return false;"
-                          title="Forget this filename">✕</button>
-                </div>`;
-              })
-              .join("")}
-          </div>
-        </div>
-        <div class="saved-file-divider"><span>OR</span></div>
-        <div class="filename-section">
-          <div class="filename-section-head">
-            <strong>Option 2 — Make a new file</strong>
-            <span class="filename-section-help">Type a new name to create a separate file.</span>
-          </div>
-        </div>
-      `
+    <div class="filename-section">
+      <div class="filename-section-head">
+        <strong>Option 1 — Reuse a previous filename</strong>
+        <span class="filename-section-help">Click a file to auto-fill the name below. Re-downloading replaces your old file.</span>
+      </div>
+      <div class="saved-file-list">
+        ${fileNames
+          .map((fn) => {
+            const ts = new Date(_savedFiles[fn].timestamp).toLocaleString();
+            return `
+          <div class="saved-file-row">
+            <button type="button" class="saved-file-btn" onclick="selectSavedFilename('${fn.replace(/'/g, "\\'")}')">
+              <span class="saved-file-name">${fn}</span>
+              <span class="saved-file-meta">
+                <span class="saved-file-ts">Last used: ${ts}</span>
+                <span class="saved-file-action">Click to use →</span>
+              </span>
+            </button>
+            <button type="button" class="saved-file-del" onclick="removeSavedFile('${fn.replace(/'/g, "\\'")}'); return false;" title="Forget this filename">✕</button>
+          </div>`;
+          })
+          .join("")}
+      </div>
+    </div>
+    <div class="saved-file-divider"><span>OR</span></div>
+    <div class="filename-section">
+      <div class="filename-section-head">
+        <strong>Option 2 — Make a new file</strong>
+        <span class="filename-section-help">Type a new name to create a separate file.</span>
+      </div>
+    </div>`
     : "";
 
   body.innerHTML = `
     ${fileList}
     <div class="field survey-field">
       <label>${hasFiles ? "File name (new or selected from above)" : "File name"} <span class="req">*</span></label>
-      <input type="text" id="sq-filename"
-             placeholder="e.g. apples_field2 (no spaces, no .ino)" required>
+      <input type="text" id="sq-filename" placeholder="e.g. apples_field2 (no spaces, no .ino)" required>
       <span class="err-msg" id="sqerr-filename">Required.</span>
     </div>
     <p class="saved-info-note">
       Submitting as <strong>${_savedAnswers.name}</strong> (${_savedAnswers.email}).
       <a href="#" onclick="closeSurvey(); editSavedAnswers(); return false;">Not you?</a>
-    </p>
-  `;
+    </p>`;
 
   overlay.classList.add("show");
   const cb = document.getElementById("consent-checkbox");
@@ -1175,7 +1457,7 @@ function selectSavedFilename(fn) {
 function removeSavedFile(fn) {
   if (
     !confirm(
-      `Delete saved configuration "${fn}"? This only removes it from your browser, not from your downloaded files.`,
+      `Delete saved configuration "${fn}"? This only removes it from your browser.`,
     )
   )
     return;
@@ -1216,7 +1498,6 @@ function confirmSurvey() {
   const toSave = { ...answers };
   delete toSave.filename;
   saveAnswers(toSave);
-
   closeSurvey();
 
   const code = buildIno(_pendingBlocks, answers);
@@ -1226,7 +1507,6 @@ function confirmSurvey() {
     .replace(/\.ino$/i, "");
   const filename = rawName ? rawName + ".ino" : _pendingFilename;
   downloadFile(code, filename);
-
   saveFile(filename, _pendingBlocks);
 
   document.getElementById("preview-code").textContent = code;
@@ -1240,7 +1520,7 @@ function confirmSurvey() {
         const paramStr = b.params
           .map((p) => `${p.name}: ${p.value}`)
           .join(", ");
-        return `Sensor ${i + 1} : Type: ${b.sensor} | Port: ${b.port} | Output: ${b.output} | Viz: ${b.viz} | Params: ${paramStr}`;
+        return `Sensor ${i + 1}: Type: ${b.sensor} | Port: ${b.port} | Output: ${b.output} | Viz: ${b.viz} | Params: ${paramStr}`;
       })
       .join(" || ");
 
@@ -1254,13 +1534,14 @@ function confirmSurvey() {
       variables,
     };
 
-    const SHEET_URL =
-      "https://script.google.com/macros/s/AKfycbzBDJalu2LdNU2UC-ySZJlxW5dh_3Djhq73sBU4JycPbOGjfBLdSuepAJs9jiIKUH1uUw/exec";
-    fetch(SHEET_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify(payload),
-    }).catch(() => {});
+    fetch(
+      "https://script.google.com/macros/s/AKfycbzBDJalu2LdNU2UC-ySZJlxW5dh_3Djhq73sBU4JycPbOGjfBLdSuepAJs9jiIKUH1uUw/exec",
+      {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(payload),
+      },
+    ).catch(() => {});
   } catch (_) {}
 }
 

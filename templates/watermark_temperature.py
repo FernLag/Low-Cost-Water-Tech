@@ -4,9 +4,9 @@
 # No parameters defined
 
 # Supported outputs:
-#   - Transformed raw value
-#   - Temperature  # equation: na
-#   - Tension  # equation: see pdf V/0.0117(kPa)
+#   - Transformed Raw Value  # equation: (−3.213*Resistance−4.093)/(1−0.009733*Resistance−0.01205*Temperature)
+#   - Temperature  # equation: directly read
+#   - Tension  # equation: Inside of the code itself for simplicity
 
 
 def read(raw_value: float) -> dict:

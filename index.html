@@ -4,26 +4,54 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
-    <title>Pillowtech Code Generator</title>
-    <link rel="icon" type="image/png" href="/Pillowtech_image.png" />
+    <title>NodeFlow On-site Sensing System Code Generator</title>
+    <link rel="icon" type="image/png" href="/NodeFlow_image.png" />
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>Pillowtech Code Generator</h1>
-        <p>
-          One port per block. Visualization is set per block so the same sensor
-          can show different outputs.
-        </p>
+        <h1>NodeFlow On-site Sensing System Code Generator</h1>
+        <div class="info-box" id="info-box">
+  <button class="info-box-title" onclick="toggleInfoBox()" aria-expanded="true">
+    <span>Summary & Instructions</span>
+    <span class="info-box-chevron" id="info-box-chevron">&#9662;</span>
+  </button>
+  <div class="info-box-body" id="info-box-body">
+          <p>
+            This website allows you to generate the code the
+            <strong>NodeFlow On-site</strong>
+            Sensing System uses to read the sensors that you will plug into it,
+            and generate the information you are interested in.
+          </p>
+          <p>
+            Please read the full instructions in the
+            <strong>NodeFlow On-site</strong> guidelines (to add as a hyperlink)
+            and videos (to add ad a hyperlink) on how to use the device.
+            <p>
+  To generate the code for your <strong>NodeFlow On-site</strong> device, you will need to know:
+</p>
+<ul class="info-list">
+  <li>What sensors you want to connect</li>
+  <li>
+    How you will connect these sensors to the Arduino ports, i.e. to which port
+    each sensor will be connected to.
+    <em>N.B. you can only connect one type of sensor to each port.</em>
+  </li>
+  <li>For each sensor, what variable should appear on your LCD screen</li>
+  <li>The visualization format for each of these variables</li>
+</ul>
+          </p>
+        </div>
         <span class="req-note">
           Fields marked <span class="req">*</span> are required
         </span>
       </div>
+
       <div id="saved-banner" class="saved-banner"></div>
       <div id="sensors-list"></div>
       <div id="port-warning" class="port-warning"></div>
       <button class="add-block-btn" onclick="addBlock()">
-        + Add sensor block
+        + Add Sensor-Arduino port connection
       </button>
       <button class="gen-btn" onclick="handleGenerate()">
         Generate + download .ino
@@ -40,6 +68,14 @@
           <button class="copy-btn" onclick="copyPreview()">Copy</button>
         </div>
         <pre class="preview-code" id="preview-code"></pre>
+      </div>
+      <div class="logo-row">
+        <div class="logo-item">
+          <img src="NodeFlow_image.png" alt="NodeFlow" class="logo" />
+          <span class="logo-caption">NodeFlow</span>
+        </div>
+        <img src="UCANR_image.png" alt="UC ANR Logo " class="logo" />
+        <img src="ucsc_image.png" alt="UCSC Logo" class="logo" />
       </div>
     </div>
 
@@ -61,15 +97,18 @@
                 document.getElementById('confirm-btn').disabled = !this.checked
               "
             />
-            I agree to share my information and understand it will be used for
-            research purposes.
-            <a
-              href="Pillowtech_consent_form.pdf"
-              target="Pillowtech consent form"
-              rel="noopener"
-              class="consent-link"
-              >For more information</a
-            >
+            <span>
+              I have read the
+              <a
+                href="consent.pdf"
+                target="_blank"
+                rel="noopener"
+                class="consent-link"
+                >consent form</a
+              >
+              and agree to my information being collected by NodeFlow for
+              research purposes.
+            </span>
           </label>
           <div class="survey-foot-btns">
             <button class="survey-cancel-btn" onclick="closeSurvey()">

@@ -3,40 +3,56 @@ const SENSOR_TYPES = {
     label: "DF_robot",
     tip: "Direct sensor reading",
     outputs: [
-      {
-        value: "Raw Value",
-        tip: "Direct sensor reading",
-      },
+      { value: "Raw Value", tip: "Raw sensor value (direct reading)" },
       {
         value: "Transformed Raw Value",
-        tip: "",
+        tip: "Value sensor in the air (units): (X-min)/(max-min)*100",
       },
       {
-        value: "Total Available Water",
-        tip: "",
+        value: "Total Available Water (volumetric?)",
+        tip: "Soil moisture: 1/k*ln(V-water_val)/(air_val-water_val)",
       },
-      {
-        value: "Rate of Change",
-        tip: "",
-      },
+      { value: "Total Available Water", tip: "soil_moisture - WP*100/(FC-WP)" },
+      { value: "Rate of Change", tip: "dV/dt = a (good or stop irrigating)" },
       {
         value: "Wetting Front",
-        tip: "",
+        tip: "Dual-depth: 'Front detected' when water reaches the deep sensor. Needs a second sensor block.",
       },
       {
         value: "1-2-3 point calibration",
-        tip: "",
+        tip: "soil_moisture - WP*100/(FC-WP)",
       },
       {
         value: "Threshold (very dry/dry/wet)",
-        tip: "",
+        tip: "x<a -> Too dry, x<b -> Very dry, else -> Good",
       },
     ],
     params: [
       {
+        name: "air_val_min",
+        display: "Air value (min)",
+        label:
+          "air_val_min: raw reading in open air, used as the 'min' baseline.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "kΩ",
+      },
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label:
+          "air_val_max: raw reading in open air, used as 'max' in Transformed Raw Value.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "kPa",
+      },
+      {
         name: "air_val",
         display: "Air value",
-        label: "Air value: raw reading in open air",
+        label:
+          "air_val: raw reading in open air, used in Total Available Water.",
         value: "0",
         min: "0",
         max: "1023",
@@ -45,7 +61,7 @@ const SENSOR_TYPES = {
       {
         name: "water_val",
         display: "Water value",
-        label: "Water value: raw reading submerged in water",
+        label: "water_val: raw reading submerged in water.",
         value: "0",
         min: "0",
         max: "1023",
@@ -54,7 +70,8 @@ const SENSOR_TYPES = {
       {
         name: "fc",
         display: "Field Capacity",
-        label: "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
+        label:
+          "FC: volumetric water content when soil has drained freely after saturation.",
         value: "0",
         min: "0",
         max: "1",
@@ -63,7 +80,8 @@ const SENSOR_TYPES = {
       {
         name: "wp",
         display: "Wilting point",
-        label: "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
+        label:
+          "WP: volumetric water content below which plants cannot extract water.",
         value: "0",
         min: "0",
         max: "1",
@@ -72,27 +90,56 @@ const SENSOR_TYPES = {
       {
         name: "k",
         display: "k",
-        label: "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
+        label: "k: calibration scaling factor.",
         value: "0",
         min: "0",
         max: "1",
         units: "",
       },
       {
-        name: "air_val_min",
-        display: "Air value (minimum)",
-        label: "Air value: raw reading in open air",
+        name: "a",
+        display: "a (threshold)",
+        label: "a: lower threshold — below this is 'Too dry'.",
         value: "0",
         min: "0",
-        max: "0",
+        max: "1023",
         units: "ADC",
       },
       {
-        name: "air_val_max",
-        display: "Air value (max)",
-        label: "Air value: raw reading in open air",
-        value: "1023",
-        min: "1023",
+        name: "b",
+        display: "b (threshold)",
+        label: "b: upper threshold — above this is 'Good'.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "shallow",
+        display: "Shallow sensor",
+        label: "shallow: the analog reading of this (upper) sensor.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "deep",
+        display: "Deep sensor port",
+        label:
+          "deep: the analog port of the lower sensor (chosen via the partner dropdown).",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "threshold",
+        display: "Front threshold",
+        label:
+          "threshold: how much the deep sensor must change (ADC units) to count as the front arriving.",
+        value: "50",
+        min: "0",
         max: "1023",
         units: "ADC",
       },
@@ -100,44 +147,33 @@ const SENSOR_TYPES = {
   },
   Watermark: {
     label: "Watermark",
-    tip: "",
+    tip: "Watermark soil moisture sensor",
     outputs: [
       {
         value: "Transformed Raw Value",
-        tip: "",
+        tip: "x<a -> Too dry, x<b -> Very dry, else -> Good",
       },
       {
         value: "Raw value (Resistance)",
-        tip: "",
-      },
-      {
-        value: "Raw value (Temperature)",
-        tip: "",
+        tip: "Resistance reading: R = Rx*(Vs-A1)/A1",
       },
     ],
     params: [
       {
-        name: "air_val",
-        display: "Air value",
-        label: "Air value: raw reading in open air",
+        name: "air_val_non_modifiable",
+        display: "Air value (non-modifiable)",
+        label:
+          "air_val_non_modifiable: resistance in open air, fixed by hardware. Used as threshold 'a'.",
         value: "0",
         min: "0",
         max: "200",
         units: "kΩ",
       },
       {
-        name: "water_val",
-        display: "Water value",
-        label: "Water value: raw reading submerged in water",
-        value: "0",
-        min: "0",
-        max: "200",
-        units: "kΩ",
-      },
-      {
-        name: "Resistance",
-        display: "Resistance",
-        label: "Resistance",
+        name: "water_val_non_modifiable",
+        display: "Water value (non-modifiable)",
+        label:
+          "water_val_non_modifiable: resistance in water, fixed by hardware. Used as threshold 'b'.",
         value: "0",
         min: "0",
         max: "200",
@@ -147,23 +183,20 @@ const SENSOR_TYPES = {
   },
   Watermark_Temperature: {
     label: "Watermark_Temperature",
-    tip: "",
+    tip: "Watermark with temperature compensation",
     outputs: [
+      { value: "Raw value (Temperature)", tip: "Temperature, directly read" },
       {
         value: "Transformed Raw Value",
-        tip: "",
+        tip: "kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T)",
       },
-      {
-        value: "Temperature",
-        tip: "",
-      },
+      { value: "Temperature", tip: "Temperature, directly read" },
       {
         value: "Tension",
-        tip: "",
+        tip: "Soil tension in kPa (computed inside the code)",
       },
     ],
-    params: [
-    ],
+    params: [],
   },
 };
 
@@ -212,45 +245,37 @@ const PORTS = [
 ];
 
 const VIZ_OPTIONS = [
-  {
-    value: "none",
-    label: "No visualization",
-    tip: "Display the information in a visual representation on the LCD screen. Currently there is nothing selected.",
-  },
-  {
-    value: "bar",
-    label: "Loading bar",
-    tip: "Displays a loading bar that changes based on water content.",
-  },
+  { value: "none", label: "No visualization", tip: "No output." },
+  { value: "bar", label: "Loading bar (LCD)", tip: "16x2 LCD progress bar." },
   {
     value: "raw_lcd",
-    label: "Raw value",
-    tip: "Displays the raw sensor value",
+    label: "Raw value (LCD)",
+    tip: "Displays the raw ADC reading on the LCD screen",
   },
   {
     value: "state_lcd",
-    label: "State: very dry / dry / wet",
-    tip: "Displays the general state at which soil seems to be",
+    label: "State: very dry / dry / wet (LCD)",
+    tip: "Three-state classification on the LCD screen",
   },
   {
     value: "transformed_lcd",
-    label: "Transformed Raw Value 0-100",
-    tip: "A more concise version of the raw sensor value",
+    label: "Transformed value (LCD)",
+    tip: "Displays the percent on the LCD screen",
   },
   {
     value: "front_lcd",
-    label: "Front detected",
-    tip: "Shows front detected when the wetting front reaches the deep sensor",
+    label: "Front detected (LCD)",
+    tip: "Shows 'Front detected' when the wetting front reaches the deep sensor",
   },
   {
     value: "temp_lcd",
-    label: "Temperature",
-    tip: "Displays the temperatue in celsius",
+    label: "Temperature °C (LCD)",
+    tip: "Displays the temperature in Celsius on the LCD",
   },
   {
     value: "kpa_lcd",
-    label: "Tension",
-    tip: "Displays soil tension in kPa",
+    label: "Tension kPa (LCD)",
+    tip: "Displays the soil tension in kPa on the LCD",
   },
 ];
 
@@ -292,27 +317,29 @@ const SURVEY_QUESTIONS = [
   },
 ];
 
-/* OUTPUT_PARAMS maps each sensor+output to the EXACT in_a..in_e columns from the Excel sheet.
-   Only these params show on the form for the selected output. */
 const OUTPUT_PARAMS = {
   DF_robot: {
     "Raw Value": ["air_val_min"],
     "Transformed Raw Value": ["air_val_max", "water_val"],
-    "Total Available Water": ["air_val", "water_val", "FC", "WP"],
+    "Total Available Water (volumetric?)": ["air_val", "water_val", "fc", "wp"],
+    "Total Available Water": ["air_val", "water_val", "fc", "wp"],
     "Rate of Change": [],
     "Wetting Front": ["shallow", "deep", "threshold"],
     "1-2-3 point calibration": ["a", "b"],
     "Threshold (very dry/dry/wet)": ["a", "b"],
   },
   Watermark: {
-    "Transformed Raw Value": ["air_val_non_modifiable", "water_val_non_modifiable"],
+    "Transformed Raw Value": [
+      "air_val_non_modifiable",
+      "water_val_non_modifiable",
+    ],
     "Raw value (Resistance)": [],
-    "Raw value (Temperature)": [],
   },
   Watermark_Temperature: {
+    "Raw value (Temperature)": [],
     "Transformed Raw Value": [],
-    "Temperature": [],
-    "Tension": [],
+    Temperature: [],
+    Tension: [],
   },
 };
 
@@ -320,6 +347,12 @@ const OUTPUT_VIZ = {
   DF_robot: {
     "Raw Value": ["none", "raw_lcd"],
     "Transformed Raw Value": ["none", "bar", "transformed_lcd"],
+    "Total Available Water (volumetric?)": [
+      "none",
+      "bar",
+      "transformed_lcd",
+      "state_lcd",
+    ],
     "Total Available Water": ["none", "bar", "transformed_lcd", "state_lcd"],
     "Rate of Change": ["none", "state_lcd"],
     "Wetting Front": ["none", "front_lcd"],
@@ -329,12 +362,12 @@ const OUTPUT_VIZ = {
   Watermark: {
     "Transformed Raw Value": ["none", "state_lcd"],
     "Raw value (Resistance)": ["none", "raw_lcd"],
-    "Raw value (Temperature)": ["none", "temp_lcd"],
   },
   Watermark_Temperature: {
+    "Raw value (Temperature)": ["none", "temp_lcd"],
     "Transformed Raw Value": ["none", "kpa_lcd"],
-    "Temperature": ["none", "temp_lcd"],
-    "Tension": ["none", "kpa_lcd"],
+    Temperature: ["none", "temp_lcd"],
+    Tension: ["none", "kpa_lcd"],
   },
 };
 
@@ -829,23 +862,23 @@ function addBlock() {
 
   block.innerHTML = `
     <div class="block-head">
-      <span class="block-title"><span class="sensor-num" id="bnum-${bid}"></span> Sensor block</span>
-      <button class="remove-btn" onclick="removeBlock(${bid})">Remove block</button>
+      <span class="block-title"><span class="sensor-num" id="bnum-${bid}"></span>Sensor-Arduino port connection specifications</span>
+      <button class="remove-btn" onclick="removeBlock(${bid})">Remove Sensor-Arduino port connection specifications</button>
     </div>
     <div class="block-body">
       <div class="row2">
+        <div class="field">
+          <label>Sensor type <span class="req">*</span> ${tipBadge(defCfg.tip || "", `stype-tip-${bid}`)}</label>
+          <select id="stype-sel-${bid}" required onchange="onSensorChange(${bid})">
+            ${sensorOpts}
+          </select>
+        </div>
         <div class="field">
           <label>Port <span class="req">*</span> ${tipBadge(PORT_TIPS[freePort] || "", `port-tip-${bid}`)}</label>
           <select id="port-sel-${bid}" required onchange="checkDuplicatePorts(); updatePortTip(${bid})">
             ${PORTS.map((p) => `<option value="${p}" ${p === freePort ? "selected" : ""}>${p}</option>`).join("")}
           </select>
           <span class="err-msg" id="err-port-${bid}">Required.</span>
-        </div>
-        <div class="field">
-          <label>Sensor type <span class="req">*</span> ${tipBadge(defCfg.tip || "", `stype-tip-${bid}`)}</label>
-          <select id="stype-sel-${bid}" required onchange="onSensorChange(${bid})">
-            ${sensorOpts}
-          </select>
         </div>
       </div>
 
@@ -1554,7 +1587,41 @@ function copyPreview() {
   });
 }
 
+const INFO_KEY = "pillowtech_info_open_v1";
+
+function toggleInfoBox() {
+  const body = document.getElementById("info-box-body");
+  const chevron = document.getElementById("info-box-chevron");
+  const btn = document.querySelector(".info-box-title");
+  if (!body) return;
+
+  const isOpen = !body.classList.contains("collapsed");
+  body.classList.toggle("collapsed", isOpen);
+  if (chevron) chevron.innerHTML = isOpen ? "&#9656;" : "&#9662;";
+  if (btn) btn.setAttribute("aria-expanded", String(!isOpen));
+
+  try {
+    localStorage.setItem(INFO_KEY, isOpen ? "closed" : "open");
+  } catch (_) {}
+}
+
+function restoreInfoBoxState() {
+  let state = "open";
+  try {
+    state = localStorage.getItem(INFO_KEY) || "open";
+  } catch (_) {}
+  if (state === "closed") {
+    const body = document.getElementById("info-box-body");
+    const chevron = document.getElementById("info-box-chevron");
+    const btn = document.querySelector(".info-box-title");
+    if (body) body.classList.add("collapsed");
+    if (chevron) chevron.innerHTML = "&#9656;";
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  }
+}
+
 initTooltips();
 addBlock();
 loadSavedAnswers();
 loadSavedFiles();
+restoreInfoBoxState();

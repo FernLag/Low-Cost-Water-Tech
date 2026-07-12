@@ -487,7 +487,6 @@ body {
   background: #0e4a8f;
 }
 
-/* ── responsive ── */
 @media (max-width: 520px) {
   body {
     padding: 24px 12px 60px;
@@ -793,4 +792,156 @@ body {
   color: #6b4e0a;
   line-height: 1.5;
   margin-bottom: 10px;
+}
+
+.info-box {
+  background: #f0f6e2;
+  border: 1px solid #cfe0a8;
+  border-left: 4px solid #77960c;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.info-box-title {
+  font-weight: 700;
+  color: #3a4f0a;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.info-box p {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #40501f;
+}
+
+.info-box p:last-child {
+  margin-bottom: 0;
+}
+
+.info-box strong {
+  color: #2d3a08;
+}
+
+.logo-footer,
+.logo-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 44px;
+  flex-wrap: wrap;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid #d8e0c4;
+}
+
+.footer-logo,
+.logo-row img,
+.logo {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+  transition: opacity 0.15s;
+}
+
+.footer-logo:hover,
+.logo-row img:hover,
+.logo:hover {
+  opacity: 1;
+}
+
+.logo-footer .logo-item,
+.logo-row .logo-item,
+.logo-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logo-item img {
+  display: block;
+}
+
+.logo-caption {
+  display: block;
+  font-size: 12px;
+  color: #4a5a20;
+  text-align: center;
+  max-width: 160px;
+  line-height: 1.4;
+}
+
+.info-list {
+  list-style: none;
+  padding-left: 4px;
+  margin: 6px 0 8px;
+}
+
+.info-list li::before {
+  content: "– ";
+  color: #77960c;
+  font-weight: 700;
+}
+
+.info-list li {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #40501f;
+  margin-bottom: 6px;
+}
+
+.info-list em {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: #6b7a4a;
+  font-style: italic;
+}
+
+.info-box-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-family: inherit;
+  font-weight: 700;
+  color: #3a4f0a;
+  font-size: 15px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.info-box-title:hover {
+  color: blue;
+}
+
+.info-box-chevron {
+  font-size: 12px;
+  color: blue;
+  transition: transform 0.15s;
+}
+
+.info-box-body {
+  overflow: hidden;
+  max-height: 600px;
+  opacity: 1;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.2s ease,
+    margin-top 0.25s ease;
+  margin-top: 10px;
+}
+
+.info-box-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
 }

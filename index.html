@@ -12,35 +12,47 @@
       <div class="header">
         <h1>NodeFlow On-site Sensing System Code Generator</h1>
         <div class="info-box" id="info-box">
-  <button class="info-box-title" onclick="toggleInfoBox()" aria-expanded="true">
-    <span>Summary & Instructions</span>
-    <span class="info-box-chevron" id="info-box-chevron">&#9662;</span>
-  </button>
-  <div class="info-box-body" id="info-box-body">
-          <p>
-            This website allows you to generate the code the
-            <strong>NodeFlow On-site</strong>
-            Sensing System uses to read the sensors that you will plug into it,
-            and generate the information you are interested in.
-          </p>
-          <p>
-            Please read the full instructions in the
-            <strong>NodeFlow On-site</strong> guidelines (to add as a hyperlink)
-            and videos (to add ad a hyperlink) on how to use the device.
+          <button
+            class="info-box-title"
+            onclick="toggleInfoBox()"
+            aria-expanded="true"
+          >
+            <span>Summary &amp; Instructions</span>
+            <span class="info-box-chevron" id="info-box-chevron">&#9662;</span>
+          </button>
+          <div class="info-box-body" id="info-box-body">
             <p>
-  To generate the code for your <strong>NodeFlow On-site</strong> device, you will need to know:
-</p>
-<ul class="info-list">
-  <li>What sensors you want to connect</li>
-  <li>
-    How you will connect these sensors to the Arduino ports, i.e. to which port
-    each sensor will be connected to.
-    <em>N.B. you can only connect one type of sensor to each port.</em>
-  </li>
-  <li>For each sensor, what variable should appear on your LCD screen</li>
-  <li>The visualization format for each of these variables</li>
-</ul>
-          </p>
+              This website allows you to generate the code the
+              <strong>NodeFlow On-site</strong>
+              Sensing System uses to read the sensors that you will plug into
+              it, and generate the information you are interested in.
+            </p>
+            <p>
+              Please read the full instructions in the
+              <strong>NodeFlow On-site</strong> guidelines (to add as a
+              hyperlink) and videos (to add ad a hyperlink) on how to use the
+              device.
+            </p>
+            <p>
+              To generate the code for your
+              <strong>NodeFlow On-site</strong> device, you will need to know:
+            </p>
+            <ul class="info-list">
+              <li>What sensors you want to connect</li>
+              <li>
+                How you will connect these sensors to the Arduino ports, i.e. to
+                which port each sensor will be connected to.
+                <em
+                  >N.B. you can only connect one type of sensor to each
+                  port.</em
+                >
+              </li>
+              <li>
+                For each sensor, what variable should appear on your LCD screen
+              </li>
+              <li>The visualization format for each of these variables</li>
+            </ul>
+          </div>
         </div>
         <span class="req-note">
           Fields marked <span class="req">*</span> are required
@@ -51,15 +63,21 @@
       <div id="sensors-list"></div>
       <div id="port-warning" class="port-warning"></div>
       <button class="add-block-btn" onclick="addBlock()">
-        + Add Sensor-Arduino port connection
+        + Add another "Sensor-Arduino port connection specifications"
       </button>
       <button class="gen-btn" onclick="handleGenerate()">
-        Generate + download .ino
+        Generate the code for my NodeFlow On-site Sensing System
       </button>
+
+      <div class="cost-estimate">
+        Do you want to estimate the cost of your system?
+        <a href="#" onclick="return false;" class="cost-link">Click here.</a>
+      </div>
+
       <div class="success-banner" id="success-banner">
         <span>&#10003;</span>
         <span>
-          <strong id="success-filename"></strong> Downloaded successfully.
+          The code has successfully downloaded. You can also visualize it below:
         </span>
       </div>
       <div class="preview-wrap" id="preview-wrap">
@@ -74,8 +92,8 @@
           <img src="NodeFlow_image.png" alt="NodeFlow" class="logo" />
           <span class="logo-caption">NodeFlow</span>
         </div>
-        <img src="UCANR_image.png" alt="UC ANR Logo " class="logo" />
-        <img src="ucsc_image.png" alt="UCSC Logo" class="logo" />
+        <img src="ucsc_image.png" alt="UC ANR Logo " class="logo" />
+        <img src="UCANR_image.png" alt="UCSC Logo" class="logo" />
       </div>
     </div>
 

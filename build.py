@@ -278,7 +278,7 @@ js = re.sub(r'const PORTS = \[.*?\];',
             build_ports(), js, flags=re.DOTALL)
 js = re.sub(r'const VIZ_OPTIONS = \[.*?\];',
             build_viz_options(), js, flags=re.DOTALL)
-js = re.sub(r'const SURVEY_QUESTIONS = \[.*?\];',
+js = re.sub(r'const SURVEY_QUESTIONS = \[.*?\n\];',
             build_survey_questions(), js, flags=re.DOTALL)
 js = re.sub(r'const OUTPUT_PARAMS = \{.*?\n\};',
             build_output_params(), js, flags=re.DOTALL)

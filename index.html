@@ -52,6 +52,13 @@
               </li>
               <li>The visualization format for each of these variables</li>
             </ul>
+            <p class="offline-note">
+              <strong>Working offline?</strong> This tool works without an
+              internet connection, but you must open it online at least once
+              first so it can load. After that, you can fill out the form and
+              download your code with no connection. Any tracking information
+              will be sent automatically the next time you're online.
+            </p>
           </div>
         </div>
         <span class="req-note">
@@ -92,8 +99,8 @@
           <img src="NodeFlow_image.png" alt="NodeFlow" class="logo" />
           <span class="logo-caption">NodeFlow</span>
         </div>
-        <img src="ucsc_image.png" alt="UC ANR Logo " class="logo" />
-        <img src="UCANR_image.png" alt="UCSC Logo" class="logo" />
+        <img src="UCANR_image.png" alt="UC ANR Logo " class="logo" />
+        <img src="ucsc_image.png" alt="UCSC Logo" class="logo" />
       </div>
     </div>
 
@@ -146,5 +153,79 @@
     </div>
 
     <script src="main.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("sw.js")
+            .then((reg) => {
+              const flush = () => {
+                if (navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.controller.postMessage("flush-queue");
+                }
+                if (reg.sync) {
+                  reg.sync.register("flush-queue").catch(() => {});
+                }
+              };
+              window.addEventListener("online", flush);
+              if (navigator.onLine) flush();
+
+              function showUpdateBar(worker) {
+                let bar = document.getElementById("update-bar");
+                if (bar) return;
+                bar = document.createElement("div");
+                bar.id = "update-bar";
+                bar.innerHTML =
+                  "<span>A new version is available.</span>" +
+                  '<button id="update-btn">Refresh</button>';
+                document.body.appendChild(bar);
+                document.getElementById("update-btn").onclick = () => {
+                  worker.postMessage("skip-waiting");
+                };
+              }
+
+              if (reg.waiting) showUpdateBar(reg.waiting);
+
+              reg.addEventListener("updatefound", () => {
+                const nw = reg.installing;
+                if (!nw) return;
+                nw.addEventListener("statechange", () => {
+                  if (
+                    nw.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    showUpdateBar(nw);
+                  }
+                });
+              });
+            })
+            .catch(() => {});
+
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+          });
+        });
+      }
+      function updateOnlineStatus() {
+        let bar = document.getElementById("offline-bar");
+        if (!navigator.onLine) {
+          if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "offline-bar";
+            bar.textContent =
+              "You're offline — the form still works and your file will download. Tracking data will send when you reconnect.";
+            document.body.appendChild(bar);
+          }
+        } else if (bar) {
+          bar.remove();
+        }
+      }
+      window.addEventListener("online", updateOnlineStatus);
+      window.addEventListener("offline", updateOnlineStatus);
+      updateOnlineStatus();
+    </script>
   </body>
 </html>

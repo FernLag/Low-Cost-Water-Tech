@@ -10,7 +10,10 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>NodeFlow On-site Sensing System Code Generator</h1>
+        <h1>
+          NodeFlow<sub class="nf-sub">(On-site)</sub> Sensing System Code
+          Generator
+        </h1>
         <div class="info-box" id="info-box">
           <button
             class="info-box-title"
@@ -23,19 +26,20 @@
           <div class="info-box-body" id="info-box-body">
             <p>
               This website allows you to generate the code the
-              <strong>NodeFlow On-site</strong>
+              <strong>NodeFlow<sub class="nf-sub">(On-site)</sub></strong>
               Sensing System uses to read the sensors that you will plug into
               it, and generate the information you are interested in.
             </p>
             <p>
               Please read the full instructions in the
-              <strong>NodeFlow On-site</strong> guidelines (to add as a
-              hyperlink) and videos (to add ad a hyperlink) on how to use the
-              device.
+              <strong>NodeFlow<sub class="nf-sub">(On-site)</sub></strong>
+              guidelines (to add as a hyperlink) and videos (to add ad a
+              hyperlink) on how to use the device.
             </p>
             <p>
               To generate the code for your
-              <strong>NodeFlow On-site</strong> device, you will need to know:
+              <strong>NodeFlow<sub class="nf-sub">(On-site)</sub></strong>
+              device, you will need to know:
             </p>
             <ul class="info-list">
               <li>What sensors you want to connect</li>
@@ -56,7 +60,7 @@
               <strong>Working offline?</strong> This tool works without an
               internet connection, but you must open it online at least once
               first so it can load. After that, you can fill out the form and
-              download your code with no connection. Any tracking information
+              download your code with no connection — any tracking information
               will be sent automatically the next time you're online.
             </p>
           </div>
@@ -73,7 +77,8 @@
         + Add another "Sensor-Arduino port connection specifications"
       </button>
       <button class="gen-btn" onclick="handleGenerate()">
-        Generate the code for my NodeFlow On-site Sensing System
+        Generate the code for my NodeFlow<sub class="nf-sub">(On-site)</sub>
+        Sensing System
       </button>
 
       <div class="cost-estimate">
@@ -209,6 +214,7 @@
           });
         });
       }
+
       function updateOnlineStatus() {
         let bar = document.getElementById("offline-bar");
         if (!navigator.onLine) {

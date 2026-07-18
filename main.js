@@ -1,46 +1,58 @@
 const SENSOR_TYPES = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
-    label: "Soil moisture capacitive sensor (such as the DFRobot SEN0308)",
-    tip: "Direct sensor reading (digital or analog output)",
+  DF_robot: {
+    label: "DF_robot",
+    tip: "Direct sensor reading",
     outputs: [
+      { value: "Raw Value", tip: "Raw sensor value (direct reading)" },
       {
-        value: "Raw Value (bits)",
-        tip: "Direct sensor reading (digital or analog output)",
+        value: "Transformed Raw Value",
+        tip: "Value sensor in the air (units): (X-min)/(max-min)*100",
       },
       {
-        value: "Raw Value (%)",
-        tip: "We will transform the raw value and express it as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
+        value: "Total Available Water (volumetric?)",
+        tip: "Soil moisture: 1/k*ln(V-water_val)/(air_val-water_val)",
       },
-      {
-        value: "Volumetric Soil Moisture",
-        tip: "The volumetric soil moisture content, expressed here as a percentage (%), references to the volume of water reported to the volume of soil. It is calculated as θv = Vw/Vs⋅100 where Vw is  the water volume, Vs the dry soil volume.",
-      },
-      {
-        value: "Total Available Water",
-        tip: "Available water capacity is the amount of water that can be stored in a soil profile and be available for growing crops. It is also known as available water content (AWC), profile available water (PAW) or total available water (TAW).",
-      },
-      {
-        value: "Rate of Change of Soil Water Status",
-        tip: "TO ADD if relevant (not yet implemented)",
-      },
+      { value: "Total Available Water", tip: "soil_moisture - WP*100/(FC-WP)" },
+      { value: "Rate of Change", tip: "dV/dt = a (good or stop irrigating)" },
       {
         value: "Wetting Front",
-        tip: "This variables specifies when the water has arrived at the depth at which the sensor is positioned.",
+        tip: "Dual-depth: 'Front detected' when water reaches the deep sensor. Needs a second sensor block.",
       },
       {
         value: "1-2-3 point calibration",
-        tip: "TO ADD if relevant (not yet implemented)",
+        tip: "soil_moisture - WP*100/(FC-WP)",
       },
       {
-        value: "Thresholds",
-        tip: "This variable will tell you if the soil is very dry, dry or wet. It transforms the raw value into these three qualitative states, using two thresholds that you specify.",
+        value: "Threshold (very dry/dry/wet)",
+        tip: "x<a -> Too dry, x<b -> Very dry, else -> Good",
       },
     ],
     params: [
       {
+        name: "air_val_min",
+        display: "Air value (min)",
+        label:
+          "air_val_min: raw reading in open air, used as the 'min' baseline.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "kΩ",
+      },
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label:
+          "air_val_max: raw reading in open air, used as 'max' in Transformed Raw Value.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "kPa",
+      },
+      {
         name: "air_val",
         display: "Air value",
-        label: "Air value: raw reading in open air",
+        label:
+          "air_val: raw reading in open air, used in Total Available Water.",
         value: "0",
         min: "0",
         max: "1023",
@@ -49,7 +61,7 @@ const SENSOR_TYPES = {
       {
         name: "water_val",
         display: "Water value",
-        label: "Water value: raw reading submerged in water",
+        label: "water_val: raw reading submerged in water.",
         value: "0",
         min: "0",
         max: "1023",
@@ -58,7 +70,8 @@ const SENSOR_TYPES = {
       {
         name: "fc",
         display: "Field Capacity",
-        label: "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
+        label:
+          "FC: volumetric water content when soil has drained freely after saturation.",
         value: "0",
         min: "0",
         max: "1",
@@ -67,7 +80,8 @@ const SENSOR_TYPES = {
       {
         name: "wp",
         display: "Wilting point",
-        label: "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
+        label:
+          "WP: volumetric water content below which plants cannot extract water.",
         value: "0",
         min: "0",
         max: "1",
@@ -76,72 +90,90 @@ const SENSOR_TYPES = {
       {
         name: "k",
         display: "k",
-        label: "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
+        label: "k: calibration scaling factor.",
         value: "0",
         min: "0",
         max: "1",
         units: "",
       },
       {
-        name: "air_val_min",
-        display: "Air value (minimum)",
-        label: "Air value: raw reading in open air",
+        name: "a",
+        display: "a (threshold)",
+        label: "a: lower threshold — below this is 'Too dry'.",
         value: "0",
         min: "0",
-        max: "0",
+        max: "1023",
         units: "ADC",
       },
       {
-        name: "air_val_max",
-        display: "Air value (max)",
-        label: "Air value: raw reading in open air",
-        value: "1023",
-        min: "1023",
+        name: "b",
+        display: "b (threshold)",
+        label: "b: upper threshold — above this is 'Good'.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "shallow",
+        display: "Shallow sensor",
+        label: "shallow: the analog reading of this (upper) sensor.",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "deep",
+        display: "Deep sensor port",
+        label:
+          "deep: the analog port of the lower sensor (chosen via the partner dropdown).",
+        value: "0",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "threshold",
+        display: "Front threshold",
+        label:
+          "threshold: how much the deep sensor must change (ADC units) to count as the front arriving.",
+        value: "50",
+        min: "0",
         max: "1023",
         units: "ADC",
       },
     ],
   },
-  Irrometer_Watermark__200SS_: {
-    label: "Irrometer Watermark (200SS)",
-    tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
+  Watermark: {
+    label: "Watermark",
+    tip: "Watermark soil moisture sensor",
     outputs: [
       {
+        value: "Transformed Raw Value",
+        tip: "x<a -> Too dry, x<b -> Very dry, else -> Good",
+      },
+      {
         value: "Raw value (Resistance)",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
-      },
-      {
-        value: "Raw Value (%)",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ), expressed as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
-      },
-      {
-        value: "Tension (kPa)",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. Once resistance is known, a calibration equation converts the value to soil water tension (kPa), using the following equation: kPa = (−3.213 × R − 4.093) / (1 − 0.009733 × R − 0,2892), where R is resistance in kΩ. This covers the range of 10 to 100 kPa. Values are linearly extrapolated for values below 10 kPa and above 100 kPa. You can use this option if you cannot measure soil temperature.",
+        tip: "Resistance reading: R = Rx*(Vs-A1)/A1",
       },
     ],
     params: [
       {
-        name: "air_val",
-        display: "Air value",
-        label: "Air value: raw reading in open air",
+        name: "air_val_non_modifiable",
+        display: "Air value (non-modifiable)",
+        label:
+          "air_val_non_modifiable: resistance in open air, fixed by hardware. Used as threshold 'a'.",
         value: "0",
         min: "0",
         max: "200",
         units: "kΩ",
       },
       {
-        name: "water_val",
-        display: "Water value",
-        label: "Water value: raw reading submerged in water",
-        value: "0",
-        min: "0",
-        max: "200",
-        units: "kΩ",
-      },
-      {
-        name: "Resistance",
-        display: "Resistance",
-        label: "Resistance",
+        name: "water_val_non_modifiable",
+        display: "Water value (non-modifiable)",
+        label:
+          "water_val_non_modifiable: resistance in water, fixed by hardware. Used as threshold 'b'.",
         value: "0",
         min: "0",
         max: "200",
@@ -149,33 +181,22 @@ const SENSOR_TYPES = {
       },
     ],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
-    label: "Irrometer Watermark (200SS) combined with Irrometer Soil Temperature Sensor (200TS)",
-    tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
+  Watermark_Temperature: {
+    label: "Watermark_Temperature",
+    tip: "Watermark with temperature compensation",
     outputs: [
+      { value: "Raw value (Temperature)", tip: "Temperature, directly read" },
       {
-        value: "Raw value (Resistance)",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
+        value: "Transformed Raw Value",
+        tip: "kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T)",
       },
-      {
-        value: "Raw Value (%)",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ), expressed as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
-      },
+      { value: "Temperature", tip: "Temperature, directly read" },
       {
         value: "Tension",
-        tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. Once resistance is known, a calibration equation converts the value to soil water tension (kPa), using the following equation: kPa = (−3.213 × R − 4.093) / (1 − 0.009733 × R − 0.01205 × T), where R is resistance in kΩ and T is temperature in °C. This covers the range of 10 to 100 kPa. Values are linearly extrapolated for values below 10 kPa and above 100 kPa. Temperature affects the measured resistance; a temperature sensor input improves accuracy. . You can use this option if you can measure soil temperature.",
-      },
-      {
-        value: "Raw value (Temperature, in °F)",
-        tip: "You are reading soil temperature using your soil temperature sensor.",
-      },
-      {
-        value: "Raw value (Temperature, in °C)",
-        tip: "You are reading soil temperature using your soil temperature sensor.",
+        tip: "Soil tension in kPa (computed inside the code)",
       },
     ],
-    params: [
-    ],
+    params: [],
   },
 };
 
@@ -224,52 +245,44 @@ const PORTS = [
 ];
 
 const VIZ_OPTIONS = [
-  {
-    value: "none",
-    label: "No visualization",
-    tip: "Display the information in a visual representation on the LCD screen. Currently there is nothing selected.",
-  },
-  {
-    value: "bar",
-    label: "Loading bar",
-    tip: "Displays a loading bar that changes based on water content.",
-  },
+  { value: "none", label: "No visualization", tip: "No output." },
+  { value: "bar", label: "Loading bar (LCD)", tip: "16x2 LCD progress bar." },
   {
     value: "raw_lcd",
-    label: "Raw value",
-    tip: "Displays the raw sensor value",
+    label: "Raw value (LCD)",
+    tip: "Displays the raw ADC reading on the LCD screen",
   },
   {
     value: "state_lcd",
-    label: "State: very dry / dry / wet",
-    tip: "Displays the general state at which soil seems to be",
+    label: "State: very dry / dry / wet (LCD)",
+    tip: "Three-state classification on the LCD screen",
   },
   {
     value: "transformed_lcd",
-    label: "Transformed Raw Value 0-100",
-    tip: "A more concise version of the raw sensor value",
+    label: "Transformed value (LCD)",
+    tip: "Displays the percent on the LCD screen",
   },
   {
     value: "front_lcd",
-    label: "Front detected",
-    tip: "Shows front detected when the wetting front reaches the deep sensor",
+    label: "Front detected (LCD)",
+    tip: "Shows 'Front detected' when the wetting front reaches the deep sensor",
   },
   {
     value: "temp_lcd",
-    label: "Temperature",
-    tip: "Displays the temperatue in celsius",
+    label: "Temperature °C (LCD)",
+    tip: "Displays the temperature in Celsius on the LCD",
   },
   {
     value: "kpa_lcd",
-    label: "Tension",
-    tip: "Displays soil tension in kPa",
+    label: "Tension kPa (LCD)",
+    tip: "Displays the soil tension in kPa on the LCD",
   },
 ];
 
 const SURVEY_QUESTIONS = [
   {
     key: "filename",
-    label: "File name",
+    label: "Name of file to generate",
     type: "text",
     required: true,
     placeholder: "e.g. apples_field2 (no spaces, no .ino)",
@@ -305,52 +318,56 @@ const SURVEY_QUESTIONS = [
 ];
 
 const OUTPUT_PARAMS = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
-    "Raw Value (bits)": ["air_val_min"],
-    "Raw Value (%)": ["air_val_max", "water_val"],
-    "Volumetric Soil Moisture": ["air_val", "water_val", "FC", "WP"],
-    "Total Available Water": ["air_val", "water_val", "FC", "WP"],
-    "Rate of Change of Soil Water Status": [],
+  DF_robot: {
+    "Raw Value": ["air_val_min"],
+    "Transformed Raw Value": ["air_val_max", "water_val"],
+    "Total Available Water (volumetric?)": ["air_val", "water_val", "fc", "wp"],
+    "Total Available Water": ["air_val", "water_val", "fc", "wp"],
+    "Rate of Change": [],
     "Wetting Front": ["shallow", "deep", "threshold"],
     "1-2-3 point calibration": ["a", "b"],
-    "Thresholds": ["a", "b"],
+    "Threshold (very dry/dry/wet)": ["a", "b"],
   },
-  Irrometer_Watermark__200SS_: {
+  Watermark: {
+    "Transformed Raw Value": [
+      "air_val_non_modifiable",
+      "water_val_non_modifiable",
+    ],
     "Raw value (Resistance)": [],
-    "Raw Value (%)": ["air_val_non_modifiable", "water_val_non_modifiable"],
-    "Tension (kPa)": [],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
-    "Raw value (Resistance)": [],
-    "Raw Value (%)": ["air_val_non_modifiable", "water_val_non_modifiable"],
-    "Tension": [],
-    "Raw value (Temperature, in °F)": [],
-    "Raw value (Temperature, in °C)": [],
+  Watermark_Temperature: {
+    "Raw value (Temperature)": [],
+    "Transformed Raw Value": [],
+    Temperature: [],
+    Tension: [],
   },
 };
 
 const OUTPUT_VIZ = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
-    "Raw Value (bits)": ["none", "raw_lcd"],
-    "Raw Value (%)": ["none", "bar", "transformed_lcd"],
-    "Volumetric Soil Moisture": ["none", "bar", "transformed_lcd", "state_lcd"],
+  DF_robot: {
+    "Raw Value": ["none", "raw_lcd"],
+    "Transformed Raw Value": ["none", "bar", "transformed_lcd"],
+    "Total Available Water (volumetric?)": [
+      "none",
+      "bar",
+      "transformed_lcd",
+      "state_lcd",
+    ],
     "Total Available Water": ["none", "bar", "transformed_lcd", "state_lcd"],
-    "Rate of Change of Soil Water Status": ["none", "state_lcd"],
+    "Rate of Change": ["none", "state_lcd"],
     "Wetting Front": ["none", "front_lcd"],
     "1-2-3 point calibration": ["none", "bar", "transformed_lcd"],
-    "Thresholds": ["none", "state_lcd"],
+    "Threshold (very dry/dry/wet)": ["none", "state_lcd"],
   },
-  Irrometer_Watermark__200SS_: {
+  Watermark: {
+    "Transformed Raw Value": ["none", "state_lcd"],
     "Raw value (Resistance)": ["none", "raw_lcd"],
-    "Raw Value (%)": ["none", "state_lcd"],
-    "Tension (kPa)": ["none"],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
-    "Raw value (Resistance)": ["none", "kpa_lcd"],
-    "Raw Value (%)": ["none", "state_lcd"],
-    "Tension": ["none", "kpa_lcd"],
-    "Raw value (Temperature, in °F)": ["none", "temp_lcd"],
-    "Raw value (Temperature, in °C)": ["none", "temp_lcd"],
+  Watermark_Temperature: {
+    "Raw value (Temperature)": ["none", "temp_lcd"],
+    "Transformed Raw Value": ["none", "kpa_lcd"],
+    Temperature: ["none", "temp_lcd"],
+    Tension: ["none", "kpa_lcd"],
   },
 };
 
@@ -795,7 +812,7 @@ function initTooltips() {
   popup.id = "tooltip-popup";
   popup.style.cssText = `
     position: fixed; z-index: 9999; max-width: 260px; padding: 8px 11px;
-    background: #1a2a08; color: #e8f0d0; font-size: 12px;
+    background: #232326; color: #eef2d4; font-size: 12px;
     font-family: system-ui, -apple-system, sans-serif; line-height: 1.5;
     border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.22);
     pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: normal;
@@ -938,7 +955,7 @@ function addBlock() {
       </div>
 
       <div class="section-card" id="params-card-${bid}">
-        <div class="section-head"><span class="section-label">The information listed below is necessary to configure your NodeFlow On-site. Please fill in each case to the best of your knowledge. ${tipBadge("In the configuration you specified in the boxes above, we need to know the value of the parameters listed below. Default values are specified but they may not be suitable for your specific situation. Please refer to the guidelines to learn how to measure these values.", `params-tip-${bid}`)}</span></div>
+        <div class="section-head"><span class="section-label">The information listed below is necessary to configure your NodeFlow<sub class="nf-sub">(On-site)</sub>. Please fill in each case to the best of your knowledge. ${tipBadge("In the configuration you specified in the boxes above, we need to know the value of the parameters listed below. Default values are specified but they may not be suitable for your specific situation. Please refer to the guidelines to learn how to measure these values.", `params-tip-${bid}`)}</span></div>
         <div class="section-body"><div id="params-${bid}"></div></div>
       </div>
     </div>

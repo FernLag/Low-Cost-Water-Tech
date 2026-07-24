@@ -1,90 +1,272 @@
 const SENSOR_TYPES = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
+  DF_robot: {
     label: "Soil moisture capacitive sensor (such as the DFRobot SEN0308)",
     tip: "Direct sensor reading (digital or analog output)",
     outputs: [
       {
         value: "Raw Value (bits)",
+        display: "Raw Sensor Value (bits)",
         tip: "Direct sensor reading (digital or analog output)",
       },
       {
         value: "Raw Value (%)",
+        display: "Raw Sensor Value (%)",
         tip: "We will transform the raw value and express it as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
       },
       {
         value: "Thresholds",
+        display: "Pre-determined Thresholds (very dry/dry/wet)",
         tip: "This variable will tell you if the soil is very dry, dry or wet. It transforms the raw value into these three qualitative states, using two thresholds that you specify.",
       },
       {
         value: "Wetting Front",
+        display: "Wetting Front arrival at sensor's depth",
         tip: "This variables specifies when the water has arrived at the depth at which the sensor is positioned.",
       },
       {
         value: "1-2-3 point calibrations",
+        display: "Quick 1, 2 or 3 point calibration procedure",
         tip: "TO ADD if relevant (not yet implemented)",
       },
       {
         value: "Rate of Change of Soil Water Status",
+        display: "Rate of Change",
         tip: "TO ADD if relevant (not yet implemented)",
       },
       {
         value: "Volumetric Soil Moisture",
+        display: "Volumetric Soil Moisture",
         tip: "The volumetric soil moisture content, expressed here as a percentage (%), references to the volume of water reported to the volume of soil. It is calculated as θv = Vw/Vs⋅100 where Vw is  the water volume, Vs the dry soil volume.",
       },
       {
         value: "Total Available Water",
+        display: "Total Available Water",
         tip: "Available water capacity is the amount of water that can be stored in a soil profile and be available for growing crops. It is also known as available water content (AWC), profile available water (PAW) or total available water (TAW).",
       },
     ],
     params: [
+      {
+        name: "air_val",
+        display: "Air value",
+        label: "Air value: raw reading in open air",
+        value: "700",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "water_val",
+        display: "Water value",
+        label: "Water value: raw reading submerged in water",
+        value: "60",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "fc",
+        display: "Field Capacity",
+        label:
+          "Field capacity: The amount of water that remains in the soil after all the excess water at saturation has been drained.",
+        value: "0.3",
+        min: "0",
+        max: "1",
+        units: "m³/m³",
+      },
+      {
+        name: "wp",
+        display: "Wilting point",
+        label:
+          "Wilting point:  When plants take up all the available water for a given soil and it dries out to the point where it cannot supply any water to keep plants from dying",
+        value: "0.1",
+        min: "0",
+        max: "1",
+        units: "m³/m³",
+      },
+      {
+        name: "k",
+        display: "k",
+        label:
+          "k: calibration scaling factor and it is determined by searching for an optimal match between the gravimetric and simulated soil moisture and minimisation of error.",
+        value: "0.5",
+        min: "0",
+        max: "1",
+        units: "",
+      },
+      {
+        name: "air_val_min",
+        display: "Air value (minimum)",
+        label: "Air value: raw reading in open air",
+        value: "0",
+        min: "0",
+        max: "0",
+        units: "ADC",
+      },
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label: "Air value: raw reading in open air",
+        value: "600",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "a",
+        display: "Upper threshold",
+        label: "",
+        value: "520",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "b",
+        display: "Lower threshold",
+        label: "",
+        value: "330",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
+      {
+        name: "shallow",
+        display: "Shallow sensor depth",
+        label: "",
+        value: "15",
+        min: "0",
+        max: "200",
+        units: "cm",
+      },
+      {
+        name: "deep",
+        display: "Deep sensor depth",
+        label: "",
+        value: "40",
+        min: "0",
+        max: "200",
+        units: "cm",
+      },
+      {
+        name: "threshold",
+        display: "Front arrival reading",
+        label: "",
+        value: "400",
+        min: "0",
+        max: "1023",
+        units: "ADC",
+      },
     ],
   },
-  Irrometer_Watermark__200SS_: {
+  Watermark: {
     label: "Irrometer Watermark (200SS)",
     tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
     outputs: [
       {
         value: "Raw value (Resistance)",
+        display: "Raw value (Resistance, in kΩ)",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
       },
       {
         value: "Raw Value (%)",
+        display: "Raw Sensor Value (%)",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ), expressed as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
       },
       {
         value: "Tension (kPa)",
+        display: "Tension (kPa)",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. Once resistance is known, a calibration equation converts the value to soil water tension (kPa), using the following equation: kPa = (−3.213 × R − 4.093) / (1 − 0.009733 × R − 0,2892), where R is resistance in kΩ. This covers the range of 10 to 100 kPa. Values are linearly extrapolated for values below 10 kPa and above 100 kPa. You can use this option if you cannot measure soil temperature.",
       },
     ],
     params: [
+      {
+        name: "air_val",
+        display: "Air value",
+        label: "Air value: raw reading in open air",
+        value: "600",
+        min: "0",
+        max: "1023",
+        units: "kΩ",
+      },
+      {
+        name: "water_val",
+        display: "Water value",
+        label: "Water value: raw reading submerged in water",
+        value: "0",
+        min: "0",
+        max: "200",
+        units: "kΩ",
+      },
+      {
+        name: "Resistance",
+        display: "Resistance",
+        label: "Resistance",
+        value: "0",
+        min: "0",
+        max: "200",
+        units: "kΩ",
+      },
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label: "",
+        value: "200",
+        min: "0",
+        max: "200",
+        units: "kΩ",
+      },
     ],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
-    label: "Irrometer Watermark (200SS) combined with Irrometer Soil Temperature Sensor (200TS)",
+  Watermark_Temperature: {
+    label:
+      "Irrometer Watermark (200SS) combined with Irrometer Soil Temperature Sensor (200TS)",
     tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
     outputs: [
       {
         value: "Raw value (Resistance)",
+        display: "Raw value (Resistance, in kΩ)",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ).",
       },
       {
         value: "Raw Value (%)",
+        display: "Raw Sensor Value (%)",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. With this option, you are reading the resistance value (kΩ), expressed as a percentage - 0% corresponds to the lowest possible value and 100% corresponds to the higest possible value.",
       },
       {
         value: "Tension",
+        display: "Tension",
         tip: "This sensor measures electrical resistance inside a granular matrix to determine soil water tension. Once resistance is known, a calibration equation converts the value to soil water tension (kPa), using the following equation: kPa = (−3.213 × R − 4.093) / (1 − 0.009733 × R − 0.01205 × T), where R is resistance in kΩ and T is temperature in °C. This covers the range of 10 to 100 kPa. Values are linearly extrapolated for values below 10 kPa and above 100 kPa. Temperature affects the measured resistance; a temperature sensor input improves accuracy. . You can use this option if you can measure soil temperature.",
       },
       {
         value: "Raw value (Temperature, in °F)",
+        display: "Raw value (Temperature, in °F)",
         tip: "You are reading soil temperature using your soil temperature sensor.",
       },
       {
         value: "Raw value (Temperature, in °C)",
+        display: "Raw value (Temperature, in °C)",
         tip: "You are reading soil temperature using your soil temperature sensor.",
       },
     ],
     params: [
+      {
+        name: "air_val_max",
+        display: "Air value (max)",
+        label: "",
+        value: "200",
+        min: "0",
+        max: "200",
+        units: "kΩ",
+      },
+      {
+        name: "water_val",
+        display: "Water value",
+        label: "",
+        value: "0",
+        min: "0",
+        max: "200",
+        units: "kΩ",
+      },
     ],
   },
 };
@@ -215,50 +397,50 @@ const SURVEY_QUESTIONS = [
 ];
 
 const OUTPUT_PARAMS = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
+  DF_robot: {
     "Raw Value (bits)": ["air_val_min"],
     "Raw Value (%)": ["air_val_max", "water_val"],
-    "Thresholds": ["a", "b"],
+    Thresholds: ["a", "b"],
     "Wetting Front": ["shallow", "deep", "threshold"],
     "1-2-3 point calibrations": ["a", "b"],
     "Rate of Change of Soil Water Status": [],
     "Volumetric Soil Moisture": ["air_val", "water_val", "FC", "WP"],
     "Total Available Water": ["air_val", "water_val", "FC", "WP"],
   },
-  Irrometer_Watermark__200SS_: {
+  Watermark: {
     "Raw value (Resistance)": [],
     "Raw Value (%)": ["abs(air_val_max)", "water_val"],
     "Tension (kPa)": [],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
+  Watermark_Temperature: {
     "Raw value (Resistance)": [],
     "Raw Value (%)": ["abs(air_val_max)", "water_val"],
-    "Tension": [],
+    Tension: [],
     "Raw value (Temperature, in °F)": [],
     "Raw value (Temperature, in °C)": [],
   },
 };
 
 const OUTPUT_VIZ = {
-  Soil_moisture_capacitive_sensor__such_as_the_DFRobot_SEN0308_: {
+  DF_robot: {
     "Raw Value (bits)": ["none", "raw_lcd"],
     "Raw Value (%)": ["none", "bar", "transformed_lcd"],
-    "Thresholds": ["none", "state_lcd"],
+    Thresholds: ["none", "state_lcd"],
     "Wetting Front": ["none", "front_lcd"],
     "1-2-3 point calibrations": ["none", "bar", "transformed_lcd"],
     "Rate of Change of Soil Water Status": ["none", "state_lcd"],
     "Volumetric Soil Moisture": ["none", "bar", "transformed_lcd", "state_lcd"],
     "Total Available Water": ["none", "bar", "transformed_lcd", "state_lcd"],
   },
-  Irrometer_Watermark__200SS_: {
+  Watermark: {
     "Raw value (Resistance)": ["none", "raw_lcd"],
-    "Raw Value (%)": ["none", "state_lcd"],
-    "Tension (kPa)": ["none"],
+    "Raw Value (%)": ["none", "state_lcd", "bar", "transformed_lcd"],
+    "Tension (kPa)": ["none", "kpa_lcd"],
   },
-  Irrometer_Watermark__200SS__combined_with_Irrometer_Soil_Temperature_Sensor__200TS_: {
-    "Raw value (Resistance)": ["none", "kpa_lcd"],
-    "Raw Value (%)": ["none", "state_lcd"],
-    "Tension": ["none", "kpa_lcd"],
+  Watermark_Temperature: {
+    "Raw value (Resistance)": ["none", "raw_lcd"],
+    "Raw Value (%)": ["none", "state_lcd", "bar", "transformed_lcd"],
+    Tension: ["none", "kpa_lcd"],
     "Raw value (Temperature, in °F)": ["none", "temp_lcd"],
     "Raw value (Temperature, in °C)": ["none", "temp_lcd"],
   },
@@ -272,8 +454,7 @@ const int   air_val_min_{idx} = {air_val_min};
 const int   air_val_max_{idx} = {air_val_max};
 const int   Vair_{idx}        = {air_val};
 const int   Vwat_{idx}        = {water_val};
-const float b_{idx}           = log({air_val} - {water_val});
-const float a_coef_{idx}      = -1.0 / {k};
+const float k_{idx}           = {k};
 float WP_{idx}                = {wp};
 float FC_{idx}                = {fc};
 const int   thr_a_{idx}       = {a};
@@ -283,38 +464,67 @@ const int   shallowDepth_{idx} = {shallow};
 const int   deepDepth_{idx}    = {deep};
 `,
       read: `  int sensorValue_{idx} = analogRead({readPin});
-  x = a_coef_{idx} * (log(sensorValue_{idx} - Vwat_{idx}) - b_{idx});`,
+  bool connected_{idx} = portHasSensor({readPin}) &&
+                         sensorValue_{idx} > 15 && sensorValue_{idx} < 1008;
+  /* Volumetric water content: x = -1/k * ln((V - Vwat) / (Vair - Vwat))
+     Every divisor and logarithm is guarded, because a parameter this output
+     does not use is emitted as 0 and would otherwise divide by zero. */
+  x = 0;
+  if (k_{idx} != 0 && (Vair_{idx} - Vwat_{idx}) > 0 && (sensorValue_{idx} - Vwat_{idx}) > 0) {
+    x = (-1.0 / k_{idx}) *
+        (log((float)(sensorValue_{idx} - Vwat_{idx})) - log((float)(Vair_{idx} - Vwat_{idx})));
+  }`,
     },
     Watermark: {
       constants: `/* Sensor {idx}: Watermark on port {port} */
 const float Rx_{idx}    = 10000.0;   /* series resistor (Ω), fixed on the NodeFlow board */
 const float Vs_{idx}    = 5.0;       /* Uno R3 supply voltage */
-const int   thr_a_{idx} = {air_val_non_modifiable};
-const int   thr_b_{idx} = {water_val_non_modifiable};
 `,
       read: `  int   sensorValue_{idx} = analogRead({readPin});
+  /* The 10k series resistor pulls this node up to Vs when the sensor is
+     open circuit, and a short pulls it to 0. Neither is a real reading. */
+  bool  connected_{idx} = sensorValue_{idx} > 8 && sensorValue_{idx} < 1015;
   float volts_{idx} = (sensorValue_{idx} / 1023.0) * Vs_{idx};   /* analog measurement, in volts */
-  float R_{idx}  = Rx_{idx} * (Vs_{idx} - volts_{idx}) / volts_{idx};`,
+  float R_{idx}  = (volts_{idx} > 0.01f)
+                   ? (Rx_{idx} * (Vs_{idx} - volts_{idx}) / volts_{idx}) / 1000.0f
+                   : 999.0f;   /* resistance in kilo-ohms */`,
     },
     Watermark_Temperature: {
       constants: `/* Sensor {idx}: Watermark_Temperature on port {port} */
 const float Rx_{idx} = 10000.0;   /* series resistor (Ω), fixed on the NodeFlow board */
 const float Vs_{idx} = 5.0;       /* Uno R3 supply voltage */
 `,
-      read: `  int   sensorValue_{idx} = analogRead({readPin});
+      read: `  /* This block covers TWO probes: the Watermark on {port} and the Irrometer
+     soil temperature sensor on {partnerPort}. */
+  int   sensorValue_{idx} = analogRead({readPin});
+  /* The 10k series resistor pulls this node up to Vs when the sensor is
+     open circuit, and a short pulls it to 0. Neither is a real reading. */
+  bool  connected_{idx} = sensorValue_{idx} > 8 && sensorValue_{idx} < 1015;
   float volts_{idx} = (sensorValue_{idx} / 1023.0) * Vs_{idx};   /* analog measurement, in volts */
-  float R_{idx}  = Rx_{idx} * (Vs_{idx} - volts_{idx}) / volts_{idx};
-  float T_{idx}  = (sensorValue_{idx} / 1023.0) * 100.0;       /* temperature, directly read (scaled) */`,
+  float R_{idx}  = (volts_{idx} > 0.01f)
+                   ? (Rx_{idx} * (Vs_{idx} - volts_{idx}) / volts_{idx}) / 1000.0f
+                   : 999.0f;   /* resistance in kilo-ohms */
+
+  int   tempRaw_{idx}   = analogRead({partnerPort});
+  float tempVolts_{idx} = (tempRaw_{idx} / 1023.0) * Vs_{idx};
+  float tempF_{idx}     = 20.0 + 48.48 * (tempVolts_{idx} - 0.49);   /* deg F */
+  float T_{idx}         = (tempF_{idx} - 32.0) / 1.8;                /* deg C, used below */`,
     },
   },
   outputs: {
     DF_robot: {
       "Raw Value": `  percent = sensorValue_{idx};`,
-      "Transformed Raw Value": `  /* (X-min)/(max-min)*100 */
-  percent = (int)constrain(
-    ((float)sensorValue_{idx} - Vwat_{idx}) * 100.0 / (air_val_max_{idx} - Vwat_{idx}),
-    0, 100
-  );`,
+      "Transformed Raw Value": `  /* (X - min) / (max - min) * 100, where min is the reading in air and
+     max is the reading in water. A capacitive probe reads HIGH in air and
+     LOW in water, so the span runs downwards: air = 0 %, water = 100 %. */
+  if (air_val_max_{idx} == Vwat_{idx}) {
+    percent = 0;                       /* not calibrated - avoid divide by zero */
+  } else {
+    percent = (int)constrain(
+      (air_val_max_{idx} - (float)sensorValue_{idx}) * 100.0 / (air_val_max_{idx} - Vwat_{idx}),
+      0, 100
+    );
+  }`,
       "Total Available Water (volumetric?)": `  if (sensorValue_{idx} <= Vwat_{idx}) {
     percent = 100;
   } else if (x <= WP_{idx}) {
@@ -352,17 +562,31 @@ const float Vs_{idx} = 5.0;       /* Uno R3 supply voltage */
   else if (sensorValue_{idx}    < front_thr_{idx}) frontDepth_{idx} = shallowDepth_{idx};
   else                                             frontDepth_{idx} = -1;
   percent = (frontDepth_{idx} < 0) ? 0 : 100;`,
-      "1-2-3 point calibration": `  /* soil_moisture - WP*100/(FC-WP) */
-  float soil_moisture_{idx} = (float)(sensorValue_{idx} - thr_a_{idx}) * 100.0 / (thr_b_{idx} - thr_a_{idx});
-  percent = (int)(soil_moisture_{idx} - WP_{idx} * 100.0 / (FC_{idx} - WP_{idx}));`,
-      "Threshold (very dry/dry/wet)": `  if      (sensorValue_{idx} < thr_a_{idx}) percent = 0;
-  else if (sensorValue_{idx} < thr_b_{idx}) percent = 50;
+      "1-2-3 point calibration": `  /* soil_moisture - WP*100/(FC-WP), with both divisors guarded */
+  float soil_moisture_{idx} = 0;
+  if (thr_b_{idx} != thr_a_{idx}) {
+    soil_moisture_{idx} = (float)(sensorValue_{idx} - thr_a_{idx}) * 100.0 / (thr_b_{idx} - thr_a_{idx});
+  }
+  if (FC_{idx} != WP_{idx}) {
+    percent = (int)(soil_moisture_{idx} - WP_{idx} * 100.0 / (FC_{idx} - WP_{idx}));
+  } else {
+    percent = (int)soil_moisture_{idx};
+  }`,
+      "Threshold (very dry/dry/wet)": `  /* Capacitive probe reads HIGH when dry:
+     x > a -> very dry, x > b -> dry, otherwise wet (expects a > b). */
+  if      (sensorValue_{idx} > thr_a_{idx}) percent = 0;
+  else if (sensorValue_{idx} > thr_b_{idx}) percent = 50;
   else                                       percent = 100;`,
     },
     Watermark: {
-      "Transformed Raw Value": `  if      (R_{idx} < thr_a_{idx}) percent = 0;
-  else if (R_{idx} < thr_b_{idx}) percent = 50;
-  else                              percent = 100;`,
+      "Transformed Raw Value": `  /* (X - min)/(max - min) * 100 on resistance. air_val_max is the dry end
+     (high kilo-ohms) and maps to 0 %; water_val is the wet end and maps to 100 %. */
+  {
+    float wmSpan_{idx} = (float){air_val_max} - (float){water_val};
+    percent = (wmSpan_{idx} != 0)
+      ? (int)constrain(((float){air_val_max} - R_{idx}) * 100.0 / wmSpan_{idx}, 0, 100)
+      : 0;   /* not calibrated */
+  }`,
       "Raw value (Resistance)": `  percent = (int)R_{idx};  /* resistance in kΩ */`,
 
       Tension: `  /* kPa = (-3.213R - 4.093) / (1 - 0.009733R - 0.2892)
@@ -372,10 +596,22 @@ const float Vs_{idx} = 5.0;       /* Uno R3 supply voltage */
   percent = (int)kPa_{idx};`,
     },
     Watermark_Temperature: {
+      "Temperature F": `  /* deg F = 20 + 48.48 x (V - 0.49) */
+  percent = (int)tempF_{idx};`,
+
+      "Temperature C": `  /* deg C = (deg F - 32) / 1.8 */
+  percent = (int)T_{idx};`,
+
       "Raw value (Temperature)": `  percent = (int)T_{idx};  /* temperature, directly read */`,
-      "Transformed Raw Value": `  /* kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T) */
-  float kPa_{idx} = (-3.213f * R_{idx} - 4.093f) / (1.0f - 0.009733f * R_{idx} - 0.01205f * T_{idx});
-  percent = (int)kPa_{idx};`,
+      "Raw value (Resistance)": `  percent = (int)R_{idx};  /* resistance in kilo-ohms */`,
+      "Transformed Raw Value": `  /* (X - min)/(max - min) * 100 on resistance. air_val_max is the dry end
+     (high kilo-ohms) and maps to 0 %; water_val is the wet end and maps to 100 %. */
+  {
+    float wmSpan_{idx} = (float){air_val_max} - (float){water_val};
+    percent = (wmSpan_{idx} != 0)
+      ? (int)constrain(((float){air_val_max} - R_{idx}) * 100.0 / wmSpan_{idx}, 0, 100)
+      : 0;   /* not calibrated */
+  }`,
       Temperature: `  percent = (int)T_{idx};  /* temperature, directly read */`,
       Tension: `  /* kPa = (-3.213R - 4.093)/(1 - 0.009733R - 0.01205T) */
   float kPa_{idx} = (-3.213f * R_{idx} - 4.093f) / (1.0f - 0.009733f * R_{idx} - 0.01205f * T_{idx});
@@ -416,7 +652,7 @@ void setup_progressbar() {
 void draw_progressbar(byte pct, const __FlashStringHelper *label) {
   lcd.setCursor(0, 0);
   lcd.print(label); lcd.print(F(": "));
-  lcd.print(pct); lcd.print(F(" %   "));
+  lcd.print(pct); lcd.print(F(" %          "));
   lcd.setCursor(0, 1);
   byte nb_columns = map(pct, 0, 100, 0, LCD_NB_COLUMNS * 2 - 2);
   for (byte i = 0; i < LCD_NB_COLUMNS; ++i) {
@@ -441,7 +677,7 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
       setup: "",
       loop: `  lcd.setCursor(0, 0);
   lcd.print(F("{port}: "));
-  lcd.print(sensorValue_{idx}); lcd.print(F("      "));
+  lcd.print(sensorValue_{idx}); lcd.print(F("            "));
   lcd.setCursor(0, 1);
   lcd.print(F("                "));`,
     },
@@ -463,7 +699,7 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
       setup: "",
       loop: `  lcd.setCursor(0, 0);
   lcd.print(F("{port}: "));
-  lcd.print(percent); lcd.print(F(" %       "));
+  lcd.print(percent); lcd.print(F(" %          "));
   lcd.setCursor(0, 1);
   lcd.print(F("                "));`,
     },
@@ -472,7 +708,7 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
       globals: "",
       setup: "",
       loop: `  lcd.setCursor(0, 0);
-  lcd.print(F("{port}: front   "));
+  lcd.print(F("{port}: front       "));
   lcd.setCursor(0, 1);
   if      (frontDepth_{idx} < 0) lcd.print(F("not arrived yet "));
   else  { lcd.print(F("at ")); lcd.print(frontDepth_{idx}); lcd.print(F(" cm       ")); }`,
@@ -483,7 +719,7 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
       setup: "",
       loop: `  lcd.setCursor(0, 0);
   lcd.print(F("{port}: "));
-  lcd.print(percent); lcd.print(F(" C       "));
+  lcd.print(percent); lcd.print(F(" {tempUnit}       "));
   lcd.setCursor(0, 1);
   lcd.print(F("                "));`,
     },
@@ -493,7 +729,7 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
       setup: "",
       loop: `  lcd.setCursor(0, 0);
   lcd.print(F("{port}: "));
-  lcd.print(percent); lcd.print(F(" kPa     "));
+  lcd.print(percent); lcd.print(F(" kPa        "));
   lcd.setCursor(0, 1);
   lcd.print(F("                "));`,
     },
@@ -502,6 +738,36 @@ void draw_progressbar(byte pct, const __FlashStringHelper *label) {
     globals: `const int buttonPin = A0;
 const int numSensors = {numBlocks};
 int currentSensor    = 0;
+
+/* ---- Is anything actually plugged into this port? ----
+   A pin with nothing attached is high impedance: it floats, and analogRead()
+   still returns a number, so the sketch would happily display noise as data.
+   We read the pin twice, once with the internal (~30k) pull-up engaged and
+   once without. A sensor that is driving the pin holds its level against that
+   weak pull-up, so both readings agree. A bare pin follows the pull-up and the
+   two readings diverge. The pin is never driven as an output, so this can
+   never fight a sensor that is present. */
+const int FLOAT_SWING = 200;   /* ADC counts the pin may move before we call it empty */
+
+bool portHasSensor(uint8_t pin) {
+  /* A floating pin holds whatever charge it last saw (leakage is tiny), so a
+     simple pull-up-vs-float comparison passes even with nothing attached, and
+     analogRead of a floating pin returns a leftover of the previous channel.
+     Instead: discharge the pin, then engage the pull-up. An empty pin follows
+     us - near 0 after discharge, climbing toward 1023 under the pull-up. A
+     sensor that drives the pin snaps back to its own level both times. */
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);       /* discharge pin + ADC sample capacitor */
+  delay(1);
+  pinMode(pin, INPUT);          /* release */
+  delay(2);
+  int lowRead = analogRead(pin);
+  pinMode(pin, INPUT_PULLUP);   /* now try to drag it high */
+  delay(2);
+  int highRead = analogRead(pin);
+  pinMode(pin, INPUT);
+  return (highRead - lowRead) < FLOAT_SWING;
+}
 
 int readButton() {
   int v = analogRead(buttonPin);
@@ -549,7 +815,7 @@ function resolveSensorKey(name) {
   const n = String(name).toLowerCase().trim();
   const alias = SENSOR_ALIASES[n];
   if (alias) return alias;
-  /* Fall back to keywords so renaming or truncating the Excel label still resolves */
+
   if (n.includes("capacitive") || n.includes("dfrobot")) return "DF_robot";
   if (n.includes("temperature") || n.includes("combined"))
     return "Watermark_Temperature";
@@ -577,8 +843,8 @@ const OUTPUT_ALIASES = {
   "raw value (resistance, in kω)": "Raw value (Resistance)",
   "tension (kpa)": "Tension",
   tension: "Tension",
-  "raw value (temperature, in °f)": "Raw value (Temperature)",
-  "raw value (temperature, in °c)": "Raw value (Temperature)",
+  "raw value (temperature, in °f)": "Temperature F",
+  "raw value (temperature, in °c)": "Temperature C",
   "raw value (temperature)": "Raw value (Temperature)",
   temperature: "Temperature",
 };
@@ -626,6 +892,9 @@ function buildIno(blocks, surveyAnswers = {}) {
       readPin: b.port,
       partnerPort: b.partnerPort || "A2",
     };
+    vars.tempUnit = /(^|[^a-z])f\b|in °f|fahrenheit/i.test(b.output || "")
+      ? "F"
+      : "C";
     b.params.forEach((p) => {
       vars[p.name] =
         p.value !== "" && p.value !== null && p.value !== undefined
@@ -642,6 +911,7 @@ function buildIno(blocks, surveyAnswers = {}) {
       loopBody += render(sensorTpl.read, vars) + "\n";
     } else {
       loopBody += `  int sensorValue_${idx} = analogRead(${b.port});\n`;
+      loopBody += `  bool connected_${idx} = portHasSensor(${b.port});\n`;
     }
 
     const sensorOutputs = lookupTemplate(TEMPLATES.outputs, sensorKey) || {};
@@ -650,17 +920,45 @@ function buildIno(blocks, surveyAnswers = {}) {
       ? render(outputTpl, vars) + "\n"
       : `  percent = sensorValue_${idx};\n`;
 
-    loopBody += `  Serial.print(F("${b.port} (${b.output}): "));\n`;
-    loopBody += `  Serial.println(percent);\n`;
+    const resolvedOut = resolveOutputKey(b.output);
+    const needsPartnerProbe =
+      resolvedOut === "Wetting Front" ||
+      (sensorKey === "Watermark_Temperature" &&
+        [
+          "Tension",
+          "Temperature F",
+          "Temperature C",
+          "Raw value (Temperature)",
+        ].includes(resolvedOut));
+    if (needsPartnerProbe) {
+      loopBody += `  connected_${idx} = connected_${idx} && portHasSensor(${vars.partnerPort});\n`;
+    }
 
-    /* Only the sensor currently selected by the buttons owns the LCD,
-       otherwise every block overwrites the one before it. */
+    loopBody += `  if (connected_${idx}) {\n`;
+    loopBody += `    Serial.print(F("${b.port} (${b.output}): "));\n`;
+    loopBody += `    Serial.println(percent);\n`;
+    loopBody += `  } else {\n`;
+    loopBody += `    Serial.println(F("${b.port}: no sensor detected"));\n`;
+    loopBody += `  }\n`;
+
     const vizTpl = lookupTemplate(TEMPLATES.viz, b.viz) || TEMPLATES.viz.none;
     const vizBody = render(vizTpl.loop, vars)
       .split("\n")
-      .map((line) => (line.trim() ? "  " + line : line))
+      .map((line) => (line.trim() ? "    " + line : line))
       .join("\n");
-    loopBody += `  if (currentSensor == ${i}) {\n${vizBody}\n  }\n\n`;
+
+    const pad = (s) => (s + "                ").slice(0, 16);
+    if (b.viz && b.viz !== "none") {
+      loopBody += `  if (currentSensor == ${i}) {\n`;
+      loopBody += `    if (connected_${idx}) {\n${vizBody}\n    } else {\n`;
+      loopBody += `      lcd.setCursor(0, 0);\n`;
+      loopBody += `      lcd.print(F("${pad(b.port + ": no sensor")}"));\n`;
+      loopBody += `      lcd.setCursor(0, 1);\n`;
+      loopBody += `      lcd.print(F("${pad("check wiring")}"));\n`;
+      loopBody += `    }\n  }\n\n`;
+    } else {
+      loopBody += `  if (currentSensor == ${i}) {\n${vizBody}\n  }\n\n`;
+    }
   });
 
   const header = blocks
@@ -869,7 +1167,15 @@ function addBlock() {
 
       <div class="section-card" id="params-card-${bid}">
         <div class="section-head"><span class="section-label">The information listed below is necessary to configure your NodeFlow<sub class="nf-sub">(On-site)</sub>. Please fill in each case to the best of your knowledge. ${tipBadge("In the configuration you specified in the boxes above, we need to know the value of the parameters listed below. Default values are specified but they may not be suitable for your specific situation. Please refer to the guidelines to learn how to measure these values.", `params-tip-${bid}`)}</span></div>
-        <div class="section-body"><div id="params-${bid}"></div></div>
+        <div class="section-body">
+          <p class="block-intro" id="cal-hint-${bid}" style="display:none">
+            <strong>Calibration values.</strong> If you don't know these numbers yet:
+            generate a code with the output "Raw Sensor Value (bits)" for this sensor first,
+            read the value shown with the probe held in open air, then with the probe
+            submerged in water, and enter those two numbers here.
+          </p>
+          <div id="params-${bid}"></div>
+        </div>
       </div>
     </div>
   `;
@@ -953,10 +1259,20 @@ function refreshViz(bid) {
   updateVizTip(bid);
 }
 
+function extraParamsFor(outputVal) {
+  const key = resolveOutputKey(outputVal);
+  if (
+    key === "Total Available Water (volumetric?)" ||
+    key === "Total Available Water"
+  ) {
+    return ["k"];
+  }
+  return [];
+}
+
 function normalizeParamName(name) {
   if (!name) return "";
-  /* Excel writes FC/WP where the params sheet says fc/wp, and sometimes wraps a
-     name in a function call such as abs(air_val_max). Match on the bare name. */
+
   const inner = String(name).match(/\(([^)]*)\)/);
   const bare = inner ? inner[1] : String(name);
   return bare.trim().toLowerCase();
@@ -974,7 +1290,9 @@ function refreshParams(bid) {
   if (!cfg) return;
 
   const outputMap = OUTPUT_PARAMS[sensorKey] || {};
-  const needed = outputMap[outputVal] ?? cfg.params.map((p) => p.name);
+  const needed = (outputMap[outputVal] ?? cfg.params.map((p) => p.name)).concat(
+    extraParamsFor(outputVal),
+  );
 
   document.querySelectorAll(`#params-${bid} .param-row`).forEach((row) => {
     const rid = row.dataset.rid;
@@ -995,24 +1313,53 @@ function refreshParams(bid) {
     card.style.display = anyVisible ? "" : "none";
   }
 
+  const CAL_PARAMS = ["air_val", "air_val_max", "water_val"];
+  const calHint = document.getElementById(`cal-hint-${bid}`);
+  if (calHint) {
+    const calVisible = [
+      ...document.querySelectorAll(`#params-${bid} .param-row`),
+    ].some((row) => {
+      if (row.style.display === "none") return false;
+      const nameEl = document.getElementById(`pname-${row.dataset.rid}`);
+      return nameEl && CAL_PARAMS.includes(normalizeParamName(nameEl.value));
+    });
+    calHint.style.display = calVisible ? "" : "none";
+  }
+
   const partnerCard = document.getElementById(`partner-card-${bid}`);
   if (partnerCard) {
     const myPort = document.getElementById(`port-sel-${bid}`).value;
     const isWettingFront = outputVal === "Wetting Front";
     const isDeepPartner = isPortUsedAsDeepPartner(myPort, bid);
+    const isTempCombo = resolveSensorKey(sensorKey) === "Watermark_Temperature";
+    const label = partnerCard.querySelector(".section-label");
+    const sel = document.getElementById(`partner-sel-${bid}`);
 
-    if (isWettingFront && !isDeepPartner) {
+    if (isTempCombo) {
       partnerCard.style.display = "";
+      if (sel) sel.style.display = "";
+      if (label)
+        label.innerHTML = `Soil temperature sensor port <span class="req">*</span>`;
+      partnerCard.querySelector(".wetting-front-msg").innerHTML =
+        `This option uses <strong>two probes</strong>. The port above is the Watermark. ` +
+        `Select the port your <strong>Irrometer soil temperature sensor</strong> is plugged into.`;
+      populatePartnerPorts(bid, "temp");
+    } else if (isWettingFront && !isDeepPartner) {
+      partnerCard.style.display = "";
+      if (sel) sel.style.display = "";
+      if (label)
+        label.innerHTML = `Deep (partner) sensor port <span class="req">*</span>`;
       partnerCard.querySelector(".wetting-front-msg").innerHTML =
         `Wetting front needs two sensors at different depths. This block is the <strong>shallow</strong> sensor. ` +
         `Add a second sensor block for the <strong>deep</strong> sensor, then choose its port here.`;
       populatePartnerPorts(bid);
     } else if (isWettingFront && isDeepPartner) {
       partnerCard.style.display = "";
+      if (label)
+        label.innerHTML = `Deep (partner) sensor port <span class="req">*</span>`;
       partnerCard.querySelector(".wetting-front-msg").innerHTML =
         `This sensor is already linked as the <strong>deep</strong> partner of another wetting-front block. ` +
         `No partner selection needed here.`;
-      const sel = document.getElementById(`partner-sel-${bid}`);
       if (sel) sel.style.display = "none";
     } else {
       partnerCard.style.display = "none";
@@ -1034,31 +1381,47 @@ function isPortUsedAsDeepPartner(port, selfBid) {
   return used;
 }
 
-function populatePartnerPorts(bid) {
+function populatePartnerPorts(bid, mode = "front") {
   const sel = document.getElementById(`partner-sel-${bid}`);
   if (!sel) return;
   const myPort = document.getElementById(`port-sel-${bid}`).value;
-  const others = [...document.querySelectorAll("[id^='port-sel-']")]
-    .map((el) => el.value)
-    .filter((p) => p !== myPort && /^A[1-5]$/.test(p));
+  const takenPorts = [...document.querySelectorAll("[id^='port-sel-']")].map(
+    (el) => el.value,
+  );
   const current = sel.value;
-  if (others.length === 0) {
-    sel.innerHTML = `<option value="">— add a second sensor block first —</option>`;
+  let choices, emptyMsg;
+
+  if (mode === "temp") {
+    choices = PORTS.filter(
+      (p) => /^A[1-5]$/.test(p) && !takenPorts.includes(p),
+    );
+    emptyMsg = "— no free analog port available —";
   } else {
-    sel.innerHTML = others
-      .map(
-        (p) =>
-          `<option value="${p}" ${p === current ? "selected" : ""}>${p}</option>`,
-      )
-      .join("");
+    choices = takenPorts.filter((p) => p !== myPort && /^A[1-5]$/.test(p));
+    emptyMsg = "— add a second sensor block first —";
   }
+
+  sel.innerHTML =
+    choices.length === 0
+      ? `<option value="">${emptyMsg}</option>`
+      : choices
+          .map(
+            (p) =>
+              `<option value="${p}" ${p === current ? "selected" : ""}>${p}</option>`,
+          )
+          .join("");
 }
 
 function refreshAllPartnerDropdowns() {
   document.querySelectorAll(".sensor-block").forEach((block) => {
     const bid = block.dataset.bid;
     const out = document.getElementById(`output-sel-${bid}`);
-    if (out && out.value === "Wetting Front") populatePartnerPorts(bid);
+    const st = document.getElementById(`stype-sel-${bid}`);
+    if (st && resolveSensorKey(st.value) === "Watermark_Temperature") {
+      populatePartnerPorts(bid, "temp");
+    } else if (out && out.value === "Wetting Front") {
+      populatePartnerPorts(bid);
+    }
   });
 }
 
@@ -1316,8 +1679,9 @@ function handleGenerate() {
     const outputVal = document.getElementById(`output-sel-${bid}`).value;
     const outputMap = OUTPUT_PARAMS[sensorKey] || {};
     const cfg = SENSOR_TYPES[sensorKey];
-    const needed =
-      outputMap[outputVal] ?? (cfg ? cfg.params.map((p) => p.name) : []);
+    const needed = (
+      outputMap[outputVal] ?? (cfg ? cfg.params.map((p) => p.name) : [])
+    ).concat(extraParamsFor(outputVal));
     const params = [];
     document.querySelectorAll(`#params-${bid} .param-row`).forEach((row) => {
       const rid = row.dataset.rid;
@@ -1338,6 +1702,18 @@ function handleGenerate() {
       params,
     });
   });
+
+  for (const b of _pendingBlocks) {
+    if (
+      resolveSensorKey(b.sensor) === "Watermark_Temperature" &&
+      !b.partnerPort
+    ) {
+      alert(
+        "This sensor uses two probes. Please select the port your soil temperature sensor is plugged into.",
+      );
+      return;
+    }
+  }
 
   const deepPorts = _pendingBlocks
     .filter((b) => b.output === "Wetting Front" && b.partnerPort)

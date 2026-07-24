@@ -42,6 +42,32 @@ def sheet_rows(sheet_name, skip=1):
 def safe_js_key(key):
     return re.sub(r'[^a-zA-Z0-9_]', '_', key)
 
+
+# The "sensors" sheet names a sensor in full ("Irrometer Watermark (200SS)")
+# while the "params" sheet uses a short key ("Watermark"). Both are folded to
+# one canonical key so parameters attach to the right sensor, and so the key
+# matches the hand-written TEMPLATES in main.js.
+SENSOR_CANON = {
+    "df_robot":              "DF_robot",
+    "dfrobot":               "DF_robot",
+    "watermark":             "Watermark",
+    "watermark_temperature": "Watermark_Temperature",
+}
+
+def canonical_sensor(name):
+    n = (name or "").strip().lower()
+    if n in SENSOR_CANON:
+        return SENSOR_CANON[n]
+    if "capacitive" in n or "dfrobot" in n:
+        return "DF_robot"
+    # must be tested before the plain Watermark rule, since this name contains it.
+    # "temp" rather than "temperature" so a truncated cell still resolves.
+    if "combined" in n or "temp" in n:
+        return "Watermark_Temperature"
+    if "watermark" in n or "irrometer" in n:
+        return "Watermark"
+    return safe_js_key(name)
+
 def sheet_header(sheet_name):
     ws = wb[sheet_name]
     for row in ws.iter_rows(min_row=1, max_row=1, values_only=True):
@@ -59,26 +85,54 @@ VIZ_COL = col_index("viz", 11)
 
 sensors_raw = sheet_rows("sensors")
 
+# Resolve every column by its header name. Inserting or reordering a column in
+# the sheet then cannot silently shift the parser (a "Unit" column added after
+# full_name used to push in_a..in_e one place to the right).
+COL = {
+    "sensor_name":  col_index("sensor_name", 0),
+    "output_value": col_index("output_value", 1),
+    "full_name":    col_index("full_name", 2),
+    "info_tip":     col_index("info_tip", 3),
+    "in_a":         col_index("in_a", 4),
+    "in_b":         col_index("in_b", 5),
+    "in_c":         col_index("in_c", 6),
+    "in_d":         col_index("in_d", 7),
+    "in_e":         col_index("in_e", 8),
+    "equation":     col_index("equation", 9),
+    "viz":          col_index("viz", 11),
+}
+
+_expected = {"sensor_name", "output_value", "full_name", "info_tip",
+             "in_a", "in_b", "in_c", "in_d", "in_e", "equation", "viz"}
+_found = {h for h in sensors_header if h in _expected}
+if _expected - _found:
+    print("  ! sensors sheet is missing header(s):", ", ".join(sorted(_expected - _found)))
+    print("    falling back to default column positions for those.")
+
+def cell(row, name):
+    i = COL[name]
+    return row[i] if i is not None and len(row) > i else ""
+
 active_keys = []
 sensor_meta = {}
 outputs_map = {}
 
 current_key = ""
 for row in sensors_raw:
-    key      = row[0]
-    out_val  = row[1]
-    out_full = row[2]
-    out_tip  = row[3]
-    inp_a    = row[4]
-    inp_b    = row[5]
-    inp_c    = row[6]
-    inp_d    = row[7]
-    inp_e    = row[8]
-    equation = row[9] if len(row) > 9 else ""
-    viz_list = row[VIZ_COL] if len(row) > VIZ_COL else ""
+    key      = cell(row, "sensor_name")
+    out_val  = cell(row, "output_value")
+    out_full = cell(row, "full_name")
+    out_tip  = cell(row, "info_tip")
+    inp_a    = cell(row, "in_a")
+    inp_b    = cell(row, "in_b")
+    inp_c    = cell(row, "in_c")
+    inp_d    = cell(row, "in_d")
+    inp_e    = cell(row, "in_e")
+    equation = cell(row, "equation")
+    viz_list = cell(row, "viz")
 
     if key:
-        current_key = safe_js_key(key)
+        current_key = canonical_sensor(key)
         if current_key not in sensor_meta:
             sensor_meta[current_key] = {
                 "label":   key,
@@ -106,7 +160,7 @@ params_raw = sheet_rows("params")
 params_map = {}
 
 for row in params_raw:
-    key       = safe_js_key(row[0])
+    key       = canonical_sensor(row[0])
     p_name    = row[1]
     # Support both 7-col (with display_name) and 6-col (without) structures
     # col 0: sensor_key, 1: param_name, then either:
@@ -166,6 +220,7 @@ def build_sensor_types():
         for o in outputs:
             lines.append(f'      {{')
             lines.append(f'        value: "{jstr(o["value"])}",')
+            lines.append(f'        display: "{jstr(o.get("full") or o["value"])}",')
             lines.append(f'        tip: "{jstr(o["tip"])}",')
             lines.append(f'      }},')
         lines.append('    ],')
